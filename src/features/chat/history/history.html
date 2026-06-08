@@ -1,25 +1,51 @@
 <main class="contents">
-  <header class="flex items-center gap-2 stick top-0 z-10 bg-surface">
+  <header class="flex items-center gap-4 p-2 stick top-0 z-10 bg-surface">
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
       <span aria-hidden="true" class="icon">close</span>
     </a>
-    <h1 class="text-base font-light">History</h1>
+    <h1 class="text-lg leading-none">History</h1>
   </header>
-  <div class="grow p-4">
+  <div class="grow flex flex-col px-4 pb-4">
     {{ if not .Rows }}
-    <p class="text-on-surface-variant text-sm px-4">No conversations yet.</p>
+    <div
+      x-show="isBlank"
+      class="grow flex flex-col items-center justify-center gap-4 text-center"
+    >
+      <div
+        class="size-32 flex items-center justify-center rounded-full border-2 border-dashed border-primary"
+        aria-hidden="true"
+      >
+        <span class="icon icon-opsz-48 text-on-primary-container">forum</span>
+      </div>
+      <h2>No converations yet</h2>
+      <p class="text-on-surface-variant">
+        Once you start chatting, your past conversations will live here.
+      </p>
+      <a href="/chat" class="btn-primary">
+        <span aria-hidden="true" class="icon icon-opsz-20">add</span>
+        <span>Start a conversation</span>
+      </a>
+    </div>
     {{ else }}
-    <ul class="flex flex-col">
+    <ul class="flex flex-col gap-2">
       {{ range .Rows }}
-      <li class="border-b border-outline-variant last:border-b-0">
+      <li class="bg-container rounded-2xl">
         <a
           href="/chat/{{ .ID }}"
-          class="flex items-center justify-between gap-4 p-4 hover:bg-surface-container-high active:bg-surface-container-highest"
+          class="flex items-center gap-4 p-4 hover:bg-surface-container-high active:bg-surface-container-highest"
         >
-          <span class="text-sm truncate">{{ .Title }}</span>
-          <span class="text-xs text-on-surface-variant shrink-0"
-            >{{ .Updated }}</span
+          <div
+            aria-hidden="true"
+            class="size-10 shrink-0 flex items-center justify-center rounded-xl bg-secondary-container"
           >
+            <span class="icon">forum</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="text-base font-bold truncate">{{ .Title }}</span>
+            <span class="text-xs text-on-surface-variant shrink-0"
+              >{{ .Updated }}</span
+            >
+          </div>
         </a>
       </li>
       {{ end }}

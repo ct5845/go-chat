@@ -4,41 +4,31 @@
   data-conversation="{{ .ConversationJSON }}"
 >
   <header
-    class="flex items-center gap-2 sticky top-0 z-10 bg-surface"
+    class="flex items-center gap-4 p-2 sticky top-0 z-10 bg-surface"
     x-show="!isBlank"
   >
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
       <span aria-hidden="true" class="icon">close</span>
     </a>
     <h1
-      class="text-base font-light"
+      class="text-lg leading-none"
       x-text="conversationTitle || 'New Conversation'"
     ></h1>
   </header>
 
-  <div
-    x-show="isBlank"
-    class="grow flex flex-col items-center justify-center gap-4 text-center p-4"
-  >
-    <div
-      class="size-32 flex items-center justify-center rounded-full bg-primary-container"
-      aria-hidden="true"
-    >
-      <span class="icon icon-opsz-48 icon-fill-1 text-on-primary-container"
-        >chat_bubble</span
-      >
-    </div>
-    <h2>No messages yet</h2>
-    <p class="text-on-surface-variant">
-      Your conversation will appear here. Pick up where you left off or ask
-      something new.
-    </p>
-    <a href="/chat/history" class="btn-outline">
-      <span>View Recent</span>
-      <span aria-hidden="true" class="icon icon-opsz-20"
-        >keyboard_arrow_right</span
-      >
+  <div x-show="isBlank" class="grow flex flex-col items-start gap-2 p-4">
+    <a href="/chat/history" class="btn-outline bg-container-lowest self-end">
+      <span aria-hidden="true" class="icon icon-opsz-14">history</span>
+      <span class="text-sm">Recent</span>
     </a>
+
+    <div class="grow"></div>
+
+    <p class="text-3xl font-extrabold" x-text="greeting"></p>
+    <p class="text-on-surface-variant font-extrabold text-3xl">
+      Ask me anything about your data.
+    </p>
+    <p class="text-sm mt-2 text-on-surface-variant italic">Try: "ping!"</p>
   </div>
 
   <div

@@ -68,6 +68,10 @@ Alpine.store("chat", {
 });
 
 Alpine.data("chat", function () {
+  function hideTabs() {
+    Alpine.store("tabs")?.hide();
+  }
+
   function scrollToBottom() {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
@@ -175,11 +179,19 @@ Alpine.data("chat", function () {
     }
   }
 
+  function greeting() {
+    const h = new Date().getHours();
+    if (h < 12) return "Good morning.";
+    if (h < 18) return "Good afternoon.";
+    return "Good evening.";
+  }
+
   return {
     isBlank: true,
     conversationTitle: "",
     _activeReply: null,
     _conversationID: "",
+    greeting: greeting(),
 
     init() {
       this.$el.addEventListener("chat-submit", (e) =>
@@ -195,8 +207,13 @@ Alpine.data("chat", function () {
             this._conversationID = conv.id;
             this.conversationTitle = conv.title ?? "";
             this.isBlank = false;
+            hideTabs();
             Alpine.store("chat").setTotals(conv.totals);
-            hydrateConversation(conv, this.$refs.messages, this.$refs.loadingIndicator);
+            hydrateConversation(
+              conv,
+              this.$refs.messages,
+              this.$refs.loadingIndicator,
+            );
           }
         } catch (_) {}
       }
@@ -246,6 +263,7 @@ Alpine.data("chat", function () {
 
       appendUserMessage(text, this.$refs.messages, before);
       this.isBlank = false;
+      hideTabs();
 
       const reply = appendAssistantMessage(this.$refs.messages, before);
       this._activeReply = reply;

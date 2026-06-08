@@ -34,7 +34,6 @@ ehthumbs.db
 Thumbs.db
 
 # Build artifacts
-data/
 build/
 dist/
 bin/
@@ -64,3 +63,6 @@ yarn.lock
 # Air live reload
 tmp/
 build-errors.log
+
+# Local data output (tmp)
+data/

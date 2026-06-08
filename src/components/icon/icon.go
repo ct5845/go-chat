@@ -7,6 +7,7 @@ import (
 )
 
 const (
+	Add             = "add"
 	ArrowDropDown   = "arrow_drop_down"
 	ArrowUpward     = "arrow_upward"
 	ArrowDownward   = "arrow_downward"
@@ -19,6 +20,8 @@ const (
 	ChevronRight    = "chevron_right"
 	CurrencyDollar  = "attach_money"
 	Check           = "check"
+	Forum           = "forum"
+	History         = "history"
 	DataUsage       = "data_usage"
 	Menu            = "menu"
 	LineStartCircle = "line_start_circle"
@@ -39,6 +42,7 @@ var IconFontHref string
 
 func init() {
 	var all = []string{
+		Add,
 		ArrowUpward,
 		ArrowDownward,
 		ArrowDropDown,
@@ -52,11 +56,13 @@ func init() {
 		CurrencyDollar,
 		Chat,
 		Check,
+		History,
 		Storage,
 		Info,
 		LineStartCircle,
 		LineEndSquare,
 		Menu,
+		Forum,
 		Mic,
 		Send,
 		Stop,

@@ -10,7 +10,9 @@ import (
 var (
 	//go:embed bottomtabs.html
 	bottomTabsHTML string
-	bottomTabsTpl  = component.New("bottomtabs.html", bottomTabsHTML)
+	//go:embed bottomtabs.js
+	bottomTabsJS string
+	bottomTabsTpl = component.WithAlpine("bottomtabs.html", bottomTabsHTML, bottomTabsJS)
 )
 
 type Tab struct {
