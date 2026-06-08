@@ -1,7 +1,7 @@
 {
-  "name": "skopeo",
-  "version": "1.0.1",
-  "short_name": "ct-go",
+  "name": "ct-go-chat",
+  "version": "1.0.0",
+  "short_name": "ct-gc",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#000000",

@@ -1,17 +1,17 @@
 package home
 
 import (
+	"ct-go-chat/src/components/component"
+	"ct-go-chat/src/components/layouttabbed"
+	"ct-go-chat/src/components/page"
+	"ct-go-chat/src/features/nav"
+	"ct-go-chat/src/infrastructure/reqlog"
 	_ "embed"
 	"fmt"
 	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
-	"ct-go-chat/src/components/component"
-	"ct-go-chat/src/components/layouttabbed"
-	"ct-go-chat/src/components/page"
-	"ct-go-chat/src/features/nav"
-	"ct-go-chat/src/infrastructure/reqlog"
 )
 
 //go:embed home.html
@@ -37,8 +37,8 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 
 func render() (template.HTML, error) {
 	content, err := homeTmpl.Render(map[string]any{
-		"Title":       "Skopeo",
-		"Description": "Survey your web presence, compare and contrast your online footprint, and gain insights into your digital identity.",
+		"Title":       "GoChat",
+		"Description": "Try out a bedrock connected chat experience.",
 	})
 	if err != nil {
 		return "", fmt.Errorf("home page: render content: %w", err)
@@ -50,8 +50,8 @@ func render() (template.HTML, error) {
 	}
 
 	return layouttabbed.RenderPage(page.Options{
-		Title:           "Skopeo",
-		MetaDescription: "Survey your web presence, compare and contrast your online footprint, and gain insights into your digital identity.",
+		Title:           "GoChat",
+		MetaDescription: "Try out a bedrock connected chat experience.",
 	}, layouttabbed.Options{
 		Content:    content,
 		BottomTabs: bottomTabs,
