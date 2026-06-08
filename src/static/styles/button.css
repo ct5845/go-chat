@@ -1,0 +1,38 @@
+.btn,
+.btn-primary,
+.btn-secondary,
+.btn-tertiary,
+.btn-outline {
+  @apply inline-flex flex-row items-center gap-1 w-auto p-2 rounded-xl font-medium text-base cursor-pointer no-underline transition-opacity duration-150;
+}
+
+.btn-icon {
+  @apply justify-center aspect-square;
+}
+
+.btn:active,
+.btn-primary:active,
+.btn-secondary:active,
+.btn-tertiary:active,
+.btn-outline:active {
+  @apply opacity-85;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-on-secondary);
+}
+
+.btn-tertiary {
+  background-color: var(--color-tertiary);
+  color: var(--color-on-tertiary);
+}
+
+.btn-outline {
+  @apply border border-outline;
+}

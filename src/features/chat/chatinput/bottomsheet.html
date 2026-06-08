@@ -1,0 +1,80 @@
+<div x-data="chatBottomsheet" class="p-2 flex flex-col gap-2">
+  <h3 class="text-xs px-4 text-on-surface-variant">This conversation</h3>
+  <div class="px-4">
+    <span
+      class="text-3xl font-bold"
+      aria-label="Conversation cost ($)"
+      x-text="totalCost"
+    ></span>
+    <span class="text-on-surface-variant text-sm" x-text="totalMessages"></span>
+  </div>
+
+  <div class="grid grid-cols-2 gap-2 *:rounded-2xl *:bg-container *:p-4">
+    <dl class="col-span-2 flex flex-col gap-2">
+      <dt class="flex items-center gap-2 w-full">
+        <span aria-hidden="true" class="icon icon-opsz-20">storage</span>
+        <span class="text-xs font-light grow">Context window</span>
+      </dt>
+      <dd class="text-sm text-on-surface-variant">
+        <div class="w-full">
+          <meter
+            class="w-full"
+            aria-label="Context window usage"
+            min="0"
+            max="100"
+            high="75"
+            :value="contextWindowUsage"
+          ></meter>
+        </div>
+        <div>
+          <span x-text="totalInputTokens"></span>
+          /
+          <span class="text-xs" x-text="contextWindow"></span>
+          <span>•</span>
+          <span x-text="percentOfContextWindow"></span>
+        </div>
+      </dd>
+    </dl>
+    <dl class="flex flex-col gap-2">
+      <dt class="flex items-center gap-2">
+        <span aria-hidden="true" class="icon icon-opsz-20">arrow_upward</span>
+        <span class="text-xs font-light">Input</span>
+      </dt>
+      <dd>
+        <span class="text-lg font-bold" x-text="totalInputTokens"></span>
+        <span class="text-sm text-on-surface-variant">tokens</span>
+      </dd>
+    </dl>
+    <dl class="flex flex-col gap-2">
+      <dt class="flex items-center gap-2">
+        <span aria-hidden="true" class="icon icon-opsz-20">arrow_downward</span>
+        <span class="text-xs font-light">Output</span>
+      </dt>
+      <dd>
+        <span class="text-lg font-bold" x-text="totalOutputTokens"></span>
+        <span class="text-sm text-on-surface-variant">tokens</span>
+      </dd>
+    </dl>
+    <dl class="flex flex-col gap-2">
+      <dt class="flex items-center gap-2">
+        <span aria-hidden="true" class="icon icon-opsz-20"
+          >arrow_cool_down</span
+        >
+        <span class="text-xs font-light">Cache Read</span>
+      </dt>
+      <dd>
+        <span class="text-lg font-bold" x-text="totalCacheRead"></span>
+        <span class="text-sm text-on-surface-variant">tokens</span>
+      </dd>
+    </dl>
+    <dl class="flex flex-col gap-2">
+      <dt class="flex items-center gap-2">
+        <span aria-hidden="true" class="icon icon-opsz-20">schedule</span>
+        <span class="text-xs font-light">Avg Response</span>
+      </dt>
+      <dd>
+        <span class="text-lg font-semibold" x-text="averageResponseTime"></span>
+      </dd>
+    </dl>
+  </div>
+</div>

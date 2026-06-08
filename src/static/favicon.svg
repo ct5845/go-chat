@@ -1,0 +1,14 @@
+<svg version="1.1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient1" x1="3.9126" x2="27.416" y1="26.182" y2="2.6785"
+      gradientTransform="matrix(1.1509 0 0 1.2051 -2.7199 -2.6238)" gradientUnits="userSpaceOnUse">
+      <stop stop-color="rgb(205 237 163)" offset="0" />
+      <stop stop-color="rgb(205 237 163)" offset="1" />
+    </linearGradient>
+  </defs>
+  <path d="m1.783 0.60417 27.05 2.4158v25.909h-25.909z" fill="url(#gradient1)" stroke-width="0" />
+  <text x="7.2832031" y="23.314453" fill="rgb(53 78 22)" fill-rule="evenodd" font-family="Georgia" font-size="24px"
+    font-weight="bold" stroke-width="5" xml:space="preserve">
+    <tspan x="7.2832031" y="23.314453">S</tspan>
+  </text>
+</svg>

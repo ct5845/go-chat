@@ -1,0 +1,94 @@
+<form
+  x-data="chatInput"
+  x-ref="form"
+  @submit.prevent="submitForm"
+  @keydown.enter="textareaEnterClicked"
+  class="sticky z-10 flex flex-col gap-2 m-4 bg-container-lowest border rounded-xl"
+  style="bottom: calc(var(--footer-height, 0px) + calc(var(--spacing) * 4))"
+>
+  <textarea
+    aria-label="Message"
+    @input="hasText = $el.value.length > 0"
+    autofocus
+    x-ref="textarea"
+    name="message"
+    rows="1"
+    minlength="1"
+    required
+    class="max-h-96 px-2 py-2 focus:outline-none bg-transparent"
+    resize="none"
+    autocomplete="off"
+    :placeholder="isListening ? 'Listening…' : 'Type a message…'"
+  ></textarea>
+  <div class="flex justify-between items-center pb-2 gap-2 px-2">
+    <button
+      x-show="totalState.show"
+      type="button"
+      aria-label="Show conversation and usage stats"
+      command="show-modal"
+      commandfor="{{ .BottomsheetId }}"
+      class="btn border! border-solid! border-outline-variant"
+    >
+      <svg
+        aria-hidden="true"
+        width="24"
+        height="24"
+        viewBox="0 0 16 16"
+        style="transform: rotate(-90deg); flex-shrink: 0"
+      >
+        <circle
+          cx="8"
+          cy="8"
+          r="5.5"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="3"
+          opacity="0.2"
+        />
+        <circle
+          cx="8"
+          cy="8"
+          r="5.5"
+          fill="none"
+          :class="$store.chat.contextNearLimit ? 'stroke-error' : 'stroke-primary'"
+          stroke-width="3"
+          stroke-linecap="round"
+          :stroke-dasharray="`${$store.chat.contextPercent * 0.3456} 34.56`"
+        />
+      </svg>
+      <span aria-hidden="true" class="icon icon-opsz-14 text-on-surface-variant"
+        >chevron_right</span
+      >
+    </button>
+    <div
+      aria-hidden="true"
+      x-ref="voiceBars"
+      x-show="isListening"
+      class="voice-bars"
+    >
+      <span></span><span></span><span></span><span></span><span></span>
+    </div>
+    <div aria-hidden="true" class="grow"></div>
+    <button
+      x-show="hasSpeechRecognition"
+      @click.prevent="micClicked"
+      :aria-label="micState.ariaLabel"
+      :class="micState.class"
+      type="button"
+      class="btn-icon"
+    >
+      <span aria-hidden="true" class="icon" x-text="micState.icon"></span>
+    </button>
+    <button
+      @click="sendClicked"
+      :aria-label="sendState.ariaLabel"
+      :type="sendState.type"
+      :class="sendState.class"
+      class="btn-icon"
+    >
+      <span aria-hidden="true" class="icon" x-text="sendState.icon"></span>
+    </button>
+  </div>
+</form>
+
+{{ .Bottomsheet }}

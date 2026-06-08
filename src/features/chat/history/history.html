@@ -1,0 +1,29 @@
+<main class="contents">
+  <header class="flex items-center gap-2 stick top-0 z-10 bg-surface">
+    <a href="/chat" class="btn btn-icon" aria-label="New Chat">
+      <span aria-hidden="true" class="icon">close</span>
+    </a>
+    <h1 class="text-base font-light">History</h1>
+  </header>
+  <div class="grow p-4">
+    {{ if not .Rows }}
+    <p class="text-on-surface-variant text-sm px-4">No conversations yet.</p>
+    {{ else }}
+    <ul class="flex flex-col">
+      {{ range .Rows }}
+      <li class="border-b border-outline-variant last:border-b-0">
+        <a
+          href="/chat/{{ .ID }}"
+          class="flex items-center justify-between gap-4 p-4 hover:bg-surface-container-high active:bg-surface-container-highest"
+        >
+          <span class="text-sm truncate">{{ .Title }}</span>
+          <span class="text-xs text-on-surface-variant shrink-0"
+            >{{ .Updated }}</span
+          >
+        </a>
+      </li>
+      {{ end }}
+    </ul>
+    {{ end }}
+  </div>
+</main>

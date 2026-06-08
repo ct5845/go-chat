@@ -1,0 +1,10 @@
+@import "tailwindcss";
+@import "./theme.css";
+@import "./typography.css";
+@import "./button.css";
+@import "./menu.css";
+@import "./meter.css";
+@import "./icon.css";
+@import "./chat.css";
+
+@source "../../**/*.{html,js,go}";

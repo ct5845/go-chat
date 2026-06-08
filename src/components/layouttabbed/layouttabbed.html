@@ -1,0 +1,18 @@
+<body class="min-h-full flex flex-col">
+  <header class="sticky top-0 z-20 w-full">{{ .Header }}</header>
+
+  {{ .Content }}
+
+  <footer
+    class="sticky bottom-0 z-20 w-full"
+    style="padding-bottom: env(safe-area-inset-bottom)"
+    x-init="
+      const obs = new ResizeObserver(([e]) => {
+        document.body.style.setProperty('--footer-height', e.borderBoxSize[0].blockSize + 'px');
+      });
+      obs.observe($el);
+    "
+  >
+    {{ .BottomTabs }}
+  </footer>
+</body>
