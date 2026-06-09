@@ -10,6 +10,8 @@ Alpine.store("bottomtabs", {
 
 Alpine.data("bottomtabs", () => {
   return {
-    visible: Alpine.store("bottomtabs").visible,
+    get visible() {
+      return Alpine.store("bottomtabs").visible;
+    },
   };
 });
