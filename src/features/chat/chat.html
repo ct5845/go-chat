@@ -1,6 +1,6 @@
 <main class="contents" x-data="chat">
   <header
-    class="flex items-center gap-4 p-2 sticky top-0 z-10 bg-surface"
+    class="flex items-center gap-2 p-2 sticky top-0 z-10 bg-surface"
     x-show="!$store.chat.isBlank"
   >
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
@@ -12,7 +12,10 @@
     ></h1>
   </header>
 
-  <div x-show="$store.chat.isBlank" class="grow flex flex-col items-start gap-2 p-4">
+  <div
+    x-show="$store.chat.isBlank"
+    class="grow flex flex-col items-start gap-2 p-4"
+  >
     <a href="/chat/history" class="btn-outline bg-container-lowest self-end">
       <span aria-hidden="true" class="icon icon-opsz-14">history</span>
       <span class="text-sm">Recent</span>
@@ -60,12 +63,12 @@
   <div
     role="group"
     aria-label="Assistant"
-    class="self-start flex gap-2"
+    class="self-start flex gap-2 max-w-full"
     aria-live="off"
   >
     <div aria-hidden="true" class="assistant-badge shrink-0 loading"></div>
-    <div class="max-w-prose">
-      <p class="message-text"></p>
+    <div class="max-w-full overflow-x-hidden">
+      <div class="message-text"></div>
       <div
         class="message-toolbar flex items-center justify-start opacity-0 -mx-2"
       >

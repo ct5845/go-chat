@@ -68,3 +68,52 @@
   align-items: center;
   justify-content: center;
 }
+
+.message-text {
+  @apply space-y-2 max-w-prose;
+}
+
+.message-text {
+  ul {
+    @apply list-disc pl-5;
+  }
+
+  ol {
+    @apply list-decimal pl-5;
+  }
+}
+
+.message-text code {
+  overflow-wrap: break-word; /* inline code can break */
+}
+
+.message-text a {
+  overflow-wrap: break-word;
+  word-break: break-word; /* long URLs */
+  @apply text-primary underline underline-offset-4 decoration-2 font-semibold;
+}
+
+.message-text table {
+  display: block;
+  overflow-x: auto; /* tables scroll, don't force-wrap cells */
+  max-width: 100%;
+
+  thead {
+    @apply border-b-2 border-outline rounded-t-2xl bg-secondary-container text-on-secondary-container;
+  }
+
+  tbody {
+    tr:nth-child(even) {
+      @apply bg-container-low;
+    }
+  }
+
+  th,
+  td {
+    @apply px-4 py-2;
+  }
+}
+
+.message-text details {
+  @apply rounded-2xl bg-container-high p-4;
+}

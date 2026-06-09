@@ -54,8 +54,12 @@
       />
     </noscript>
 
+    <script defer src="/static/marked.min.js"></script>
+    <script defer src="/static/purify.min.js"></script>
     <script defer src="/static/htmx.min.js"></script>
+    <script defer src="/static/alpine-morph.min.js"></script>
     <script defer src="/static/alpine.min.js"></script>
+
     <script>
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(function (error) {

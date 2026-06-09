@@ -1,13 +1,31 @@
-function* parseLines(lines) {
+const markdownRenderer = (() => {
+  const renderer = new marked.Renderer();
+
+  renderer.heading = ({ tokens, depth }) => {
+    const text = renderer.parser.parseInline(tokens);
+    const level = Math.min(depth + 1, 6);
+    return `<h${level}>${text}</h${level}>`;
+  };
+
+  marked.setOptions({ gfm: true, breaks: false });
+
+  return rawText => {
+    const dirty = marked.parse(rawText, { renderer });
+    return DOMPurify.sanitize(dirty);
+  }
+})();
+
+function parseEvent(rawEvent) {
   let eventType = "";
-  for (const line of lines) {
-    if (line.startsWith("event: ")) {
-      eventType = line.slice(7).trim();
-    } else if (line.startsWith("data: ")) {
-      yield { type: eventType, data: line.slice(6) };
-      eventType = "";
+  const dataLines = [];
+  for (const line of rawEvent.split("\n")) {
+    if (line.startsWith("event:")) {
+      eventType = line.slice(6).trim();
+    } else if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).replace(/^ /, "")); // strip one optional leading space
     }
   }
+  return { type: eventType, data: dataLines.join("\n") };
 }
 
 async function* parseSseStream(reader) {
@@ -16,9 +34,11 @@ async function* parseSseStream(reader) {
     const { done, value } = await reader.read();
     if (done) break;
     buf += value;
-    const lines = buf.split("\n");
-    buf = lines.pop();
-    yield* parseLines(lines);
+    const events = buf.split("\n\n");
+    buf = events.pop();
+    for (const ev of events) {
+      if (ev.trim()) yield parseEvent(ev)
+    }
   }
 }
 
@@ -134,14 +154,28 @@ Alpine.data("chat", function () {
 
   function appendAssistantMessage(messages, before) {
     const node = cloneTemplate("message-assistant", messages, before);
+    const textElement = node.querySelector(".message-text");
     let rawText = "";
+    let renderTimer = null;
+
+    function render() {
+      textElement.innerHTML = markdownRenderer(rawText);
+    }
+
     return {
       appendWord(word) {
         rawText += word;
-        node.querySelector(".message-text").textContent = rawText;
+        if (renderTimer) return;
+        renderTimer = setTimeout(() => {
+          renderTimer = null;
+          render();
+        }, 60);
         scrollToBottom();
       },
       finalise(payload) {
+        if (renderTimer) clearTimeout(renderTimer);
+        render();
+
         node.setAttribute("aria-live", "polite");
         node.querySelector(".assistant-badge").classList.remove("loading");
         node.querySelector(".output-tokens").textContent =
@@ -155,8 +189,11 @@ Alpine.data("chat", function () {
         node.querySelector(".message-toolbar").classList.remove("opacity-0");
       },
       cancel() {
+        if (renderTimer) clearTimeout(renderTimer);
+
         const anchor = node.nextSibling;
         if (rawText) {
+          render();
           node.querySelector(".assistant-badge").classList.remove("loading");
         } else {
           node.remove();
@@ -183,6 +220,7 @@ Alpine.data("chat", function () {
         }
       }
     }
+    scrollToBottom();
   }
 
   function greeting() {

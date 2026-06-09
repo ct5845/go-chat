@@ -1,4 +1,4 @@
-const CACHE = "ct-go-web-starter-cache-v1";
+const CACHE = "ct-go-chat-cache-v1";
 const OFFLINE_URL = "/static/offline.html";
 
 const PRECACHE = ["/static/style.css", OFFLINE_URL];

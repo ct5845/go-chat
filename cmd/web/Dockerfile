@@ -6,7 +6,11 @@ RUN npm ci
 COPY src/static ./src/static
 RUN npx tailwindcss -i ./src/static/styles/styles.css -o ./tmp/static/style.css --minify
 RUN cp node_modules/alpinejs/dist/cdn.min.js ./tmp/static/alpine.min.js
+RUN cp node_modules/@alpinejs/morph/dist/cdn.min.js ./tmp/static/alpine-morph.min.js
 RUN cp node_modules/htmx.org/dist/htmx.min.js ./tmp/static/htmx.min.js
+RUN cp node_modules/marked/lib/marked.umd.js ./tmp/static/marked.min.js
+RUN cp node_modules/dompurify/dist/purify.min.js ./tmp/static/purify.min.js
+RUN cp node
 COPY src/static ./tmp/static
 
 # Stage 2: build the Go binary

@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -91,7 +92,7 @@ func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerF
 		var assistantText strings.Builder
 		for word := range words {
 			assistantText.WriteString(word)
-			fmt.Fprintf(w, "event: word\ndata: %s\n\n", word)
+			writeSSE(w, "word", word)
 			flusher.Flush()
 		}
 
@@ -124,7 +125,15 @@ func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerF
 			slog.Error("chat: marshal done event", "error", err)
 			return
 		}
-		fmt.Fprintf(w, "event: done\ndata: %s\n\n", doneData)
+		writeSSE(w, "done", string(doneData))
 		flusher.Flush()
 	}
+}
+
+func writeSSE(w io.Writer, event, payload string) {
+	fmt.Fprintf(w, "event: %s\n", event)
+	for _, line := range strings.Split(payload, "\n") {
+		fmt.Fprintf(w, "data: %s\n", line)
+	}
+	fmt.Fprint(w, "\n")
 }

@@ -23,6 +23,14 @@ func main() {
 	if err := copyHTMX(); err != nil {
 		panic(err)
 	}
+
+	if err := copyMarked(); err != nil {
+		panic(err)
+	}
+
+	if err := copyDOMPurify(); err != nil {
+		panic(err)
+	}
 }
 
 func copyAssets() error {
@@ -43,7 +51,13 @@ func copyAlpineJS() error {
 		return err
 	}
 
-	slog.Info("Copied Alpine.js to tmp/static")
+	err = filesystem.CopyFile("node_modules/@alpinejs/morph/dist/cdn.min.js", "tmp/static/alpine-morph.min.js")
+	if err != nil {
+		slog.Error("Failed to copy AlpineMorph", "error", err)
+		return err
+	}
+
+	slog.Info("Copied Alpine.js & Alpine Morph to tmp/static")
 	return nil
 }
 
@@ -55,5 +69,39 @@ func copyHTMX() error {
 	}
 
 	slog.Info("Copied HTMX to tmp/static")
+	return nil
+}
+
+func copyMarked() error {
+	err := filesystem.CopyFile("node_modules/marked/lib/marked.umd.js", "tmp/static/marked.min.js")
+	if err != nil {
+		slog.Error("Failed to copy Marked", "error", err)
+		return err
+	}
+
+	err = filesystem.CopyFile("node_modules/marked/lib/marked.umd.js.map", "tmp/static/marked.min.js.map")
+	if err != nil {
+		slog.Error("Failed to copy Marked Map", "error", err)
+		return err
+	}
+
+	slog.Info("Copied Marked to tmp/static")
+	return nil
+}
+
+func copyDOMPurify() error {
+	err := filesystem.CopyFile("node_modules/dompurify/dist/purify.min.js", "tmp/static/purify.min.js")
+	if err != nil {
+		slog.Error("Failed to copy DOMPurify", "error", err)
+		return err
+	}
+
+	err = filesystem.CopyFile("node_modules/dompurify/dist/purify.min.js.map", "tmp/static/purify.min.js.map")
+	if err != nil {
+		slog.Error("Failed to copy DOMPurify Map", "error", err)
+		return err
+	}
+
+	slog.Info("Copied DOMPurify to tmp/static")
 	return nil
 }
