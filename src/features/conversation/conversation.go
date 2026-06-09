@@ -3,12 +3,12 @@ package conversation
 import (
 	"cmp"
 	"crypto/rand"
+	"ct-go-chat/src/infrastructure/llm"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
-	"ct-go-chat/src/infrastructure/llm"
 	"slices"
 	"strings"
 	"time"
@@ -31,14 +31,14 @@ type Summary struct {
 
 type Store struct {
 	dir     string
-	ModelID string
+	modelID string
 }
 
 func NewStore(dir, modelID string) (*Store, error) {
 	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return nil, fmt.Errorf("conversation store: mkdir %s: %w", dir, err)
 	}
-	return &Store{dir: dir, ModelID: modelID}, nil
+	return &Store{dir: dir, modelID: modelID}, nil
 }
 
 func (s *Store) Load(id string) (*Conversation, error) {
@@ -65,7 +65,7 @@ func (s *Store) Save(c *Conversation) error {
 			}
 		}
 	}
-	c.Totals = computeTotals(c.Messages, s.ModelID)
+	c.Totals = computeTotals(c.Messages, s.modelID)
 	c.Updated = time.Now()
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {

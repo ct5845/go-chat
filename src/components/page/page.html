@@ -8,19 +8,16 @@
     <meta name="description" content="{{ .MetaDescription }}" />
     {{ end }} {{ if .Robots }}
     <meta name="robots" content="{{ .Robots }}" />
-    {{ end }}
-    {{ if .CanonicalURL }}
+    {{ end }} {{ if .CanonicalURL }}
     <link rel="canonical" href="{{ .CanonicalURL }}" />
     {{ end }}
 
     <meta property="og:title" content="{{ .Title }}" />
     {{ if .MetaDescription }}
     <meta property="og:description" content="{{ .MetaDescription }}" />
-    {{ end }}
-    {{ if .OGImageURL }}
+    {{ end }} {{ if .OGImageURL }}
     <meta property="og:image" content="{{ .OGImageURL }}" />
-    {{ end }}
-    {{ if .CanonicalURL }}
+    {{ end }} {{ if .CanonicalURL }}
     <meta property="og:url" content="{{ .CanonicalURL }}" />
     {{ end }}
 
@@ -60,7 +57,7 @@
     <script defer src="/static/htmx.min.js"></script>
     <script defer src="/static/alpine.min.js"></script>
     <script>
-      if ('serviceWorker' in navigator) {
+      if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js").catch(function (error) {
           console.error("Service Worker registration failed:", error);
         });

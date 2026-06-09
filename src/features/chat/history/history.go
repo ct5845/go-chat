@@ -1,25 +1,23 @@
 package history
 
 import (
+	"ct-go-chat/src/components/component"
+	"ct-go-chat/src/components/layoutfull"
+	"ct-go-chat/src/components/page"
+	"ct-go-chat/src/features/conversation"
+	"ct-go-chat/src/infrastructure/reqlog"
 	_ "embed"
 	"fmt"
 	"html/template"
 	"io"
 	"log/slog"
 	"net/http"
-	"ct-go-chat/src/components/component"
-	"ct-go-chat/src/components/layoutfull"
-	"ct-go-chat/src/components/page"
-	"ct-go-chat/src/features/conversation"
-	"ct-go-chat/src/infrastructure/reqlog"
 	"time"
 )
 
 //go:embed history.html
 var historyHTML string
 var historyTmpl = component.New("history.html", historyHTML)
-
-var Store *conversation.Store
 
 func formatUpdated(t, now time.Time) string {
 	diff := now.Sub(t)
@@ -49,21 +47,23 @@ func formatUpdated(t, now time.Time) string {
 	}
 }
 
-func RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /chat/history", handleGet)
+func RegisterRoutes(mux *http.ServeMux, store *conversation.Store) {
+	mux.HandleFunc("GET /chat/history", handleGet(store))
 }
 
-func handleGet(w http.ResponseWriter, r *http.Request) {
-	defer reqlog.Track(r.Context(), "history.handleGet", "")()
+func handleGet(store *conversation.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer reqlog.Track(r.Context(), "history.handleGet", "")()
 
-	rendered, err := renderPage()
-	if err != nil {
-		slog.Error("Failed to render history page", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
+		rendered, err := renderPage(store)
+		if err != nil {
+			slog.Error("Failed to render history page", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		io.WriteString(w, string(rendered))
 	}
-
-	io.WriteString(w, string(rendered))
 }
 
 type summaryRow struct {
@@ -72,8 +72,8 @@ type summaryRow struct {
 	Updated string
 }
 
-func renderPage() (template.HTML, error) {
-	summaries, err := Store.List()
+func renderPage(store *conversation.Store) (template.HTML, error) {
+	summaries, err := store.List()
 	if err != nil {
 		return "", fmt.Errorf("history page: list conversations: %w", err)
 	}

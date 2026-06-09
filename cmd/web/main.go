@@ -2,12 +2,7 @@ package main
 
 import (
 	"context"
-	"log/slog"
-	"net/http"
-	"os"
-	"os/signal"
 	"ct-go-chat/src/features/chat"
-	"ct-go-chat/src/features/chat/chatstream"
 	"ct-go-chat/src/features/conversation"
 	"ct-go-chat/src/features/home"
 	"ct-go-chat/src/infrastructure/compression"
@@ -15,6 +10,10 @@ import (
 	"ct-go-chat/src/infrastructure/fileserver"
 	"ct-go-chat/src/infrastructure/llm"
 	"ct-go-chat/src/infrastructure/reqlog"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
 	"syscall"
 	"time"
 
@@ -32,7 +31,7 @@ func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	var err error
-	chatstream.Bedrock, err = llm.NewBedrock(config.BedrockRegion, config.BedrockModelID)
+	bedrock, err := llm.NewBedrock(config.BedrockRegion, config.BedrockModelID)
 	if err != nil {
 		slog.Error("Failed to initialise Bedrock", "error", err)
 		os.Exit(1)
@@ -44,11 +43,8 @@ func routes() *http.ServeMux {
 		os.Exit(1)
 	}
 
-	chatstream.Store = store
-	chat.Store = store
-
 	home.RegisterRoutes(mux)
-	chat.RegisterRoutes(mux)
+	chat.RegisterRoutes(mux, store, bedrock)
 	fileserver.RegisterRoutes(mux, "tmp/static/")
 
 	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {

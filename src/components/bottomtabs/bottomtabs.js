@@ -1,4 +1,4 @@
-Alpine.store("tabs", {
+Alpine.store("bottomtabs", {
   visible: true,
   hide() {
     this.visible = false;
@@ -6,4 +6,10 @@ Alpine.store("tabs", {
   show() {
     this.visible = true;
   },
+});
+
+Alpine.data("bottomtabs", () => {
+  return {
+    visible: Alpine.store("bottomtabs").visible,
+  };
 });

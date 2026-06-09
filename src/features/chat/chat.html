@@ -1,22 +1,18 @@
-<main
-  class="contents"
-  x-data="chat"
-  data-conversation="{{ .ConversationJSON }}"
->
+<main class="contents" x-data="chat">
   <header
     class="flex items-center gap-4 p-2 sticky top-0 z-10 bg-surface"
-    x-show="!isBlank"
+    x-show="!$store.chat.isBlank"
   >
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
       <span aria-hidden="true" class="icon">close</span>
     </a>
     <h1
       class="text-lg leading-none"
-      x-text="conversationTitle || 'New Conversation'"
+      x-text="$store.chat.title || 'New Conversation'"
     ></h1>
   </header>
 
-  <div x-show="isBlank" class="grow flex flex-col items-start gap-2 p-4">
+  <div x-show="$store.chat.isBlank" class="grow flex flex-col items-start gap-2 p-4">
     <a href="/chat/history" class="btn-outline bg-container-lowest self-end">
       <span aria-hidden="true" class="icon icon-opsz-14">history</span>
       <span class="text-sm">Recent</span>
@@ -32,7 +28,7 @@
   </div>
 
   <div
-    x-show="!isBlank"
+    x-show="!$store.chat.isBlank"
     x-ref="messages"
     class="grow flex flex-col gap-4 px-4 pt-4"
   >

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 )
 
@@ -17,14 +16,6 @@ func Load() {
 	BedrockRegion = getEnvOr("AWS_REGION", "us-east-1")
 	BedrockModelID = getEnvOr("BEDROCK_MODEL_ID", "us.anthropic.claude-haiku-4-5-20251001-v1:0")
 	ConversationsDir = getEnvOr("CONVERSATIONS_DIR", "data/conversations")
-}
-
-func mustGetEnv(key string) string {
-	v := os.Getenv(key)
-	if v == "" {
-		panic(fmt.Sprintf("config: %s environment variable is required", key))
-	}
-	return v
 }
 
 func getEnvOr(key, fallback string) string {

@@ -1,25 +1,20 @@
 package chatstream
 
 import (
+	"ct-go-chat/src/features/conversation"
+	"ct-go-chat/src/infrastructure/llm"
+	"ct-go-chat/src/infrastructure/reqlog"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
-	"ct-go-chat/src/features/conversation"
-	"ct-go-chat/src/infrastructure/llm"
-	"ct-go-chat/src/infrastructure/reqlog"
 	"strings"
 	"time"
 )
 
-var (
-	Bedrock *llm.Bedrock
-	Store   *conversation.Store
-)
-
-func RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("POST /chat/stream", handleStream())
+func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, bedrock *llm.Bedrock) {
+	mux.HandleFunc("POST /chat/stream", handleStream(store, bedrock))
 }
 
 type streamRequest struct {
@@ -34,7 +29,7 @@ type doneEvent struct {
 	Totals         conversation.Totals `json:"totals"`
 }
 
-func handleStream() http.HandlerFunc {
+func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		defer reqlog.Track(r.Context(), "chat.handleStream", "")()
 		reqlog.IgnoreDuration(r.Context())
@@ -53,7 +48,7 @@ func handleStream() http.HandlerFunc {
 			}
 		} else {
 			var err error
-			conv, err = Store.Load(req.ConversationID)
+			conv, err = store.Load(req.ConversationID)
 			if err != nil {
 				http.Error(w, "conversation not found", http.StatusNotFound)
 				return
@@ -89,7 +84,7 @@ func handleStream() http.HandlerFunc {
 					msgs = append(msgs, m)
 				}
 			}
-			usage, err := Bedrock.Respond(r.Context(), msgs, words)
+			usage, err := bedrock.Respond(r.Context(), msgs, words)
 			resCh <- result{usage, err}
 		}()
 
@@ -114,7 +109,7 @@ func handleStream() http.HandlerFunc {
 		}
 		conv.Messages = append(conv.Messages, assistant)
 
-		if err := Store.Save(conv); err != nil {
+		if err := store.Save(conv); err != nil {
 			slog.Error("chat: save conversation", "error", err)
 		}
 

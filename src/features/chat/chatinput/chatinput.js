@@ -11,8 +11,6 @@ Alpine.data("chatInput", function () {
     _analyser: null,
     _rafId: null,
 
-    init() {},
-
     get isStreaming() {
       return Alpine.store("chat").isStreaming;
     },

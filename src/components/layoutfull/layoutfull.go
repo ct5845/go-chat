@@ -1,18 +1,15 @@
 package layoutfull
 
 import (
-	_ "embed"
-	"html/template"
 	"ct-go-chat/src/components/component"
 	"ct-go-chat/src/components/page"
+	_ "embed"
+	"html/template"
 )
 
 //go:embed layoutfull.html
 var layoutHTML string
 var comp = component.New("layoutfull.html", layoutHTML)
-
-type Tab struct {
-}
 
 type Options struct {
 	Header  template.HTML

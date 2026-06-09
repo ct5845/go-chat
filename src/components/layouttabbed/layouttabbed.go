@@ -11,9 +11,6 @@ import (
 var layoutHTML string
 var comp = component.New("layouttabbed.html", layoutHTML)
 
-type Tab struct {
-}
-
 type Options struct {
 	Header     template.HTML
 	Content    template.HTML

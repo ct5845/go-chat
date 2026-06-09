@@ -26,6 +26,9 @@ Alpine.store("chat", {
   isStreaming: false,
   _abortController: null,
   totals: null,
+  conversationID: "",
+  title: "",
+  isBlank: true,
 
   start(ac) {
     this._abortController = ac;
@@ -40,8 +43,11 @@ Alpine.store("chat", {
     this.isStreaming = false;
   },
 
-  setTotals(t) {
-    this.totals = t;
+  setConversation({ id, title, totals }) {
+    this.conversationID = id ?? "";
+    this.title = title ?? "";
+    this.totals = totals ?? null;
+    this.isBlank = !id;
   },
 
   get totalCost() {
@@ -69,7 +75,7 @@ Alpine.store("chat", {
 
 Alpine.data("chat", function () {
   function hideTabs() {
-    Alpine.store("tabs")?.hide();
+    Alpine.store("bottomtabs")?.hide();
   }
 
   function scrollToBottom() {
@@ -187,10 +193,7 @@ Alpine.data("chat", function () {
   }
 
   return {
-    isBlank: true,
-    conversationTitle: "",
     _activeReply: null,
-    _conversationID: "",
     greeting: greeting(),
 
     init() {
@@ -199,23 +202,15 @@ Alpine.data("chat", function () {
       );
       this.$el.addEventListener("chat-stop", () => this.onStop());
 
-      const raw = this.$el.dataset.conversation;
-      if (raw && raw !== "null") {
-        try {
-          const conv = JSON.parse(raw);
-          if (conv && conv.messages && conv.messages.length > 0) {
-            this._conversationID = conv.id;
-            this.conversationTitle = conv.title ?? "";
-            this.isBlank = false;
-            hideTabs();
-            Alpine.store("chat").setTotals(conv.totals);
-            hydrateConversation(
-              conv,
-              this.$refs.messages,
-              this.$refs.loadingIndicator,
-            );
-          }
-        } catch (_) {}
+      const conv = <<< .ConversationJSON >>>;
+      if (conv?.messages?.length > 0) {
+        Alpine.store("chat").setConversation(conv);
+        hideTabs();
+        hydrateConversation(
+          conv,
+          this.$refs.messages,
+          this.$refs.loadingIndicator,
+        );
       }
     },
 
@@ -239,19 +234,22 @@ Alpine.data("chat", function () {
           try {
             payload = JSON.parse(data);
           } catch (_) {}
-          const isNew = !this._conversationID;
-          this._conversationID = payload?.conversation_id ?? "";
-          if (isNew && this._conversationID) {
-            history.replaceState(null, "", "/chat/" + this._conversationID);
+          const store = Alpine.store("chat");
+          const isNew = !store.conversationID;
+          if (payload?.conversation_id) {
+            store.setConversation({
+              id: payload.conversation_id,
+              title: payload.title,
+              totals: payload.totals,
+            });
+            if (payload.title) document.title = payload.title;
           }
-          if (payload?.title) {
-            document.title = payload.title;
-            this.conversationTitle = payload.title;
+          if (isNew && store.conversationID) {
+            history.replaceState(null, "", "/chat/" + store.conversationID);
           }
-          if (payload?.totals) Alpine.store("chat").setTotals(payload.totals);
           reply.finalise(payload);
           this._activeReply = null;
-          Alpine.store("chat").stop();
+          store.stop();
           break;
         }
       }
@@ -262,7 +260,7 @@ Alpine.data("chat", function () {
       const before = this.$refs.loadingIndicator;
 
       appendUserMessage(text, this.$refs.messages, before);
-      this.isBlank = false;
+      store.isBlank = false;
       hideTabs();
 
       const reply = appendAssistantMessage(this.$refs.messages, before);
@@ -276,7 +274,7 @@ Alpine.data("chat", function () {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            conversation_id: this._conversationID,
+            conversation_id: store.conversationID,
             message: text,
           }),
           signal: ac.signal,

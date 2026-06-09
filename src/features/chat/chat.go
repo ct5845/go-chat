@@ -1,13 +1,6 @@
 package chat
 
 import (
-	_ "embed"
-	"encoding/json"
-	"fmt"
-	"html/template"
-	"io"
-	"log/slog"
-	"net/http"
 	"ct-go-chat/src/components/component"
 	"ct-go-chat/src/components/layoutfull"
 	"ct-go-chat/src/components/layouttabbed"
@@ -17,7 +10,15 @@ import (
 	"ct-go-chat/src/features/chat/history"
 	"ct-go-chat/src/features/conversation"
 	"ct-go-chat/src/features/nav"
+	"ct-go-chat/src/infrastructure/llm"
 	"ct-go-chat/src/infrastructure/reqlog"
+	_ "embed"
+	"encoding/json"
+	"fmt"
+	"html/template"
+	"io"
+	"log/slog"
+	"net/http"
 )
 
 //go:embed chat.html
@@ -28,14 +29,11 @@ var chatJS string
 
 var chatTmpl = component.WithAlpine("chat.html", chatHTML, chatJS)
 
-var Store *conversation.Store
-
-func RegisterRoutes(mux *http.ServeMux) {
+func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, bedrock *llm.Bedrock) {
 	mux.HandleFunc("GET /chat", handleGet)
-	mux.HandleFunc("GET /chat/{conversation}", handleGetConversation)
-	chatstream.RegisterRoutes(mux)
-	history.Store = Store
-	history.RegisterRoutes(mux)
+	mux.HandleFunc("GET /chat/{conversation}", handleGetConversation(store))
+	chatstream.RegisterRoutes(mux, store, bedrock)
+	history.RegisterRoutes(mux, store)
 }
 
 func handleGet(w http.ResponseWriter, r *http.Request) {
@@ -51,24 +49,26 @@ func handleGet(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(rendered))
 }
 
-func handleGetConversation(w http.ResponseWriter, r *http.Request) {
-	defer reqlog.Track(r.Context(), "chat.handleGetConversation", "")()
+func handleGetConversation(store *conversation.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer reqlog.Track(r.Context(), "chat.handleGetConversation", "")()
 
-	id := r.PathValue("conversation")
-	conv, err := Store.Load(id)
-	if err != nil {
-		http.Error(w, "conversation not found", http.StatusNotFound)
-		return
+		id := r.PathValue("conversation")
+		conv, err := store.Load(id)
+		if err != nil {
+			http.Error(w, "conversation not found", http.StatusNotFound)
+			return
+		}
+
+		rendered, err := renderPage(conv)
+		if err != nil {
+			slog.Error("Failed to render chat page", "error", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		io.WriteString(w, string(rendered))
 	}
-
-	rendered, err := renderPage(conv)
-	if err != nil {
-		slog.Error("Failed to render chat page", "error", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		return
-	}
-
-	io.WriteString(w, string(rendered))
 }
 
 type chatProps struct {
