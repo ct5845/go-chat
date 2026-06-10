@@ -1,0 +1,10 @@
+#!/bin/sh
+# Reject the commit if any Go file is not gofmt-formatted.
+# cmd and src instead of ./ to avoid walking node_modules.
+unformatted=$(gofmt -l cmd src)
+if [ -n "$unformatted" ]; then
+  echo "commit blocked: files not gofmt-formatted:" >&2
+  echo "$unformatted" >&2
+  echo "fix with: gofmt -w cmd src" >&2
+  exit 1
+fi

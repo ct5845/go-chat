@@ -33,7 +33,7 @@ Feature-internal components (used only within one feature) live in the feature d
 
 ## Components and Templates
 
-Each component is a `.go` file + `.html` file pair, optionally with a `.js` file when using `component.WithJS`. Use `//go:embed` to embed the HTML at compile time.
+Each component is a `.go` file + `.html` file pair, optionally with a `.js` file when using `component.WithAlpine` or `component.WithIIFE`. Use `//go:embed` to embed the HTML at compile time.
 
 All data preparation happens in Go. Do not use template functions for logic. If a template needs data, compute it in Go and pass it as a named prop. Templates are for rendering only.
 

@@ -1,10 +1,10 @@
 package chatinput
 
 import (
-	_ "embed"
-	"html/template"
 	"ct-go-chat/src/components/bottomsheet"
 	"ct-go-chat/src/components/component"
+	_ "embed"
+	"html/template"
 )
 
 //go:embed bottomsheet.html

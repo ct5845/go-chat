@@ -1,9 +1,9 @@
 package bottomsheet
 
 import (
+	"ct-go-chat/src/components/component"
 	_ "embed"
 	"html/template"
-	"ct-go-chat/src/components/component"
 )
 
 var (

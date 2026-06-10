@@ -22,11 +22,11 @@ func Render(options Options) (template.HTML, error) {
 }
 
 func RenderPage(pageOptions page.Options, options Options) (template.HTML, error) {
-	if body, err := Render(options); err != nil {
-		return "", err
-	} else {
-		pageOptions.Body = body
-	}
+	body, err := Render(options)
 
+	if err != nil {
+		return "", err
+	}
+	pageOptions.Body = body
 	return page.Render(pageOptions)
 }

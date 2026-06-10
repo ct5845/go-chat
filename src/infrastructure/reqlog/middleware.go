@@ -1,10 +1,12 @@
 package reqlog
 
 import (
+	"cmp"
 	"context"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
@@ -93,14 +95,11 @@ func (rw *responseWriter) Flush() {
 }
 
 func buildWaterfall(spans []Span, total time.Duration) string {
-	sorted := make([]Span, len(spans))
-	copy(sorted, spans)
 	// sort by start time so the waterfall reads top-to-bottom chronologically
-	for i := 1; i < len(sorted); i++ {
-		for j := i; j > 0 && sorted[j].Start < sorted[j-1].Start; j-- {
-			sorted[j], sorted[j-1] = sorted[j-1], sorted[j]
-		}
-	}
+	sorted := slices.Clone(spans)
+	slices.SortFunc(sorted, func(a, b Span) int {
+		return cmp.Compare(a.Start, b.Start)
+	})
 
 	totalMs := total.Milliseconds()
 	if totalMs == 0 {

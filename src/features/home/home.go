@@ -19,10 +19,10 @@ var homeHTML string
 var homeTmpl = component.New("home.html", homeHTML)
 
 func RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("/", HandleGet)
+	mux.HandleFunc("/", handleGet)
 }
 
-func HandleGet(w http.ResponseWriter, r *http.Request) {
+func handleGet(w http.ResponseWriter, r *http.Request) {
 	defer reqlog.Track(r.Context(), "home.HandleGet", "")()
 	page, err := render()
 
@@ -35,10 +35,15 @@ func HandleGet(w http.ResponseWriter, r *http.Request) {
 	io.WriteString(w, string(page))
 }
 
+type options struct {
+	Title       string
+	Description string
+}
+
 func render() (template.HTML, error) {
-	content, err := homeTmpl.Render(map[string]any{
-		"Title":       "GoChat",
-		"Description": "Try out a bedrock connected chat experience.",
+	content, err := homeTmpl.Render(options{
+		Title:       "GoChat",
+		Description: "Try out a bedrock connected chat experience.",
 	})
 	if err != nil {
 		return "", fmt.Errorf("home page: render content: %w", err)

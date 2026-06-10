@@ -50,67 +50,83 @@ func (b *Bedrock) Respond(ctx context.Context, messages []Message, chunks chan<-
 	stream := out.GetStream()
 	defer stream.Close()
 
-	var messageID, model string
-	var tu tokenUsage
-	var events []json.RawMessage
-	var cancelled bool
-	var ttfbMs, ttlbMs int64
+	res, err := consumeStream(ctx, stream.Events(), invokeTime, chunks)
+	if err != nil {
+		return Usage{}, err
+	}
 
-	for event := range stream.Events() {
+	if res.messageID != "" {
+		writeChatLog(invokeTime, res.messageID, res.model, lastUserMessage(messages), res.usage, res.events)
+	}
+
+	usage := Usage{
+		MessageID:                res.messageID,
+		InputTokens:              res.usage.InputTokens,
+		CacheCreationInputTokens: res.usage.CacheCreationInputTokens,
+		CacheReadInputTokens:     res.usage.CacheReadInputTokens,
+		OutputTokens:             res.usage.OutputTokens,
+		CostUSD:                  estimateCost(res.model, res.usage, 0),
+		Timing:                   Timing{TTFBMs: res.ttfbMs, TTLBMs: res.ttlbMs},
+	}
+
+	if res.cancelled {
+		return usage, ErrCancelled
+	}
+	return usage, stream.Err()
+}
+
+// streamResult accumulates everything observed while consuming a response
+// stream: identity and usage metadata, the raw events for the chat log,
+// latency milestones, and whether the caller cancelled mid-stream.
+type streamResult struct {
+	messageID string
+	model     string
+	usage     tokenUsage
+	events    []json.RawMessage
+	cancelled bool
+	ttfbMs    int64
+	ttlbMs    int64
+}
+
+func consumeStream(ctx context.Context, events <-chan types.ResponseStream, invokeTime time.Time, chunks chan<- string) (streamResult, error) {
+	var res streamResult
+	for event := range events {
 		chunk, ok := event.(*types.ResponseStreamMemberChunk)
 		if !ok {
 			continue
 		}
 		raw := chunk.Value.Bytes
-		events = append(events, json.RawMessage(raw))
-		parseStreamMeta(raw, &messageID, &model, &tu)
+		res.events = append(res.events, json.RawMessage(raw))
+		parseStreamMeta(raw, &res)
 		text, err := extractTextDelta(raw)
 		if err != nil {
-			return Usage{}, fmt.Errorf("bedrock: parse event: %w", err)
+			return res, fmt.Errorf("bedrock: parse event: %w", err)
 		}
 		if text == "" {
 			continue
 		}
 		elapsed := time.Since(invokeTime).Milliseconds()
-		if ttfbMs == 0 {
-			ttfbMs = elapsed
+		if res.ttfbMs == 0 {
+			res.ttfbMs = elapsed
 		}
-		ttlbMs = elapsed
+		res.ttlbMs = elapsed
 		select {
 		case <-ctx.Done():
-			cancelled = true
+			res.cancelled = true
+			return res, nil
 		case chunks <- text:
 		}
-		if cancelled {
-			break
+	}
+	return res, nil
+}
+
+func lastUserMessage(messages []Message) string {
+	for i := len(messages) - 1; i >= 0; i-- {
+		if messages[i].Role == "user" {
+			return messages[i].Content
 		}
 	}
-
-	if messageID != "" {
-		userInput := ""
-		for _, m := range messages {
-			if m.Role == "user" {
-				userInput = m.Content
-				break
-			}
-		}
-		writeChatLog(invokeTime, messageID, model, userInput, tu, events)
-	}
-
-	usage := Usage{
-		MessageID:                messageID,
-		InputTokens:              tu.InputTokens,
-		CacheCreationInputTokens: tu.CacheCreationInputTokens,
-		CacheReadInputTokens:     tu.CacheReadInputTokens,
-		OutputTokens:             tu.OutputTokens,
-		CostUSD:                  estimateCost(model, tu, 0),
-		Timing:                   Timing{TTFBMs: ttfbMs, TTLBMs: ttlbMs},
-	}
-
-	if cancelled {
-		return usage, ErrCancelled
-	}
-	return usage, stream.Err()
+	return ""
 }
 
 func buildRequestBody(messages []Message) ([]byte, error) {
@@ -146,7 +162,7 @@ func buildRequestBody(messages []Message) ([]byte, error) {
 	return json.Marshal(req)
 }
 
-func parseStreamMeta(raw []byte, messageID, model *string, usage *tokenUsage) {
+func parseStreamMeta(raw []byte, res *streamResult) {
 	var event struct {
 		Type    string `json:"type"`
 		Message struct {
@@ -165,13 +181,13 @@ func parseStreamMeta(raw []byte, messageID, model *string, usage *tokenUsage) {
 	}
 	switch event.Type {
 	case "message_start":
-		*messageID = event.Message.ID
-		*model = event.Message.Model
+		res.messageID = event.Message.ID
+		res.model = event.Message.Model
 	case "message_delta":
-		usage.InputTokens = event.Usage.InputTokens
-		usage.CacheCreationInputTokens = event.Usage.CacheCreationInputTokens
-		usage.CacheReadInputTokens = event.Usage.CacheReadInputTokens
-		usage.OutputTokens = event.Usage.OutputTokens
+		res.usage.InputTokens = event.Usage.InputTokens
+		res.usage.CacheCreationInputTokens = event.Usage.CacheCreationInputTokens
+		res.usage.CacheReadInputTokens = event.Usage.CacheReadInputTokens
+		res.usage.OutputTokens = event.Usage.OutputTokens
 	}
 }
 

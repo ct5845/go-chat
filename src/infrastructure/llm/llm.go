@@ -32,4 +32,3 @@ type Timing struct {
 	TTFBMs int64 `json:"ttfb_ms"` // time to first text token
 	TTLBMs int64 `json:"ttlb_ms"` // time to last text token (stream end)
 }
-

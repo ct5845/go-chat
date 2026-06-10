@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"html/template"
 	texttemplate "text/template"
-
-	_ "ct-go-chat/src/infrastructure/config"
 )
 
 type component struct {
@@ -27,9 +25,9 @@ func New(name, htmlTemplate string) *component {
 	}
 }
 
-// WithScript creates a component with both HTML and JavaScript templates.
+// withScript creates a component with both HTML and JavaScript templates.
 // The JS template uses <<< >>> delimiters to avoid conflicts with Go/JavaScript templates.
-func WithScript(name, htmlTemplate, jsTemplate string) *component {
+func withScript(name, htmlTemplate, jsTemplate string) *component {
 	var scriptTmpl *texttemplate.Template
 	if jsTemplate != "" {
 		var err error
@@ -69,7 +67,7 @@ func WithIIFE(name, htmlTemplate, jsTemplate string) *component {
 	wrappedJS := fmt.Sprintf(`(function() {
 %s
 })();`, jsTemplate)
-	return WithScript(name, htmlTemplate, wrappedJS)
+	return withScript(name, htmlTemplate, wrappedJS)
 }
 
 func WithAlpine(name, htmlTemplate, jsTemplate string) *component {
@@ -77,7 +75,7 @@ func WithAlpine(name, htmlTemplate, jsTemplate string) *component {
 			%s
 		});
 	`, jsTemplate)
-	return WithScript(name, htmlTemplate, alpineWrapper)
+	return withScript(name, htmlTemplate, alpineWrapper)
 }
 
 func (c *component) Render(data any) (template.HTML, error) {
@@ -86,13 +84,4 @@ func (c *component) Render(data any) (template.HTML, error) {
 		return "", fmt.Errorf("component %q: %w", c.name, err)
 	}
 	return template.HTML(buf.String()), nil
-}
-
-// MustRender executes the component template and panics on error (useful for compile-time safety)
-func (c *component) MustRender(data any) template.HTML {
-	html, err := c.Render(data)
-	if err != nil {
-		panic(err)
-	}
-	return html
 }
