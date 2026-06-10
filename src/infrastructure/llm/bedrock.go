@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"ct-go-chat/src/infrastructure/llm/llmprompts"
+
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/bedrockruntime"
@@ -13,8 +15,9 @@ import (
 )
 
 type Bedrock struct {
-	client  *bedrockruntime.Client
-	modelID string
+	client       *bedrockruntime.Client
+	modelID      string
+	systemPrompt string
 }
 
 func NewBedrock(region, modelID string) (*Bedrock, error) {
@@ -22,9 +25,14 @@ func NewBedrock(region, modelID string) (*Bedrock, error) {
 	if err != nil {
 		return nil, fmt.Errorf("bedrock: load AWS config: %w", err)
 	}
+	systemPrompt, err := llmprompts.GetSystemPrompt()
+	if err != nil {
+		return nil, fmt.Errorf("bedrock: render system prompt: %w", err)
+	}
 	return &Bedrock{
-		client:  bedrockruntime.NewFromConfig(cfg),
-		modelID: modelID,
+		client:       bedrockruntime.NewFromConfig(cfg),
+		modelID:      modelID,
+		systemPrompt: systemPrompt,
 	}, nil
 }
 
@@ -33,7 +41,7 @@ func (b *Bedrock) Respond(ctx context.Context, messages []Message, chunks chan<-
 
 	invokeTime := time.Now()
 
-	body, err := buildRequestBody(messages)
+	body, err := buildRequestBody(b.systemPrompt, messages)
 	if err != nil {
 		return Usage{}, fmt.Errorf("bedrock: build request: %w", err)
 	}
@@ -129,10 +137,14 @@ func lastUserMessage(messages []Message) string {
 	return ""
 }
 
-func buildRequestBody(messages []Message) ([]byte, error) {
-	type content struct {
+func buildRequestBody(systemPrompt string, messages []Message) ([]byte, error) {
+	type cacheControl struct {
 		Type string `json:"type"`
-		Text string `json:"text"`
+	}
+	type content struct {
+		Type         string        `json:"type"`
+		Text         string        `json:"text"`
+		CacheControl *cacheControl `json:"cache_control,omitempty"`
 	}
 	type bedrockMessage struct {
 		Role    string    `json:"role"`
@@ -148,17 +160,24 @@ func buildRequestBody(messages []Message) ([]byte, error) {
 	req := bedrockRequest{
 		AnthropicVersion: "bedrock-2023-05-31",
 		MaxTokens:        4096,
+		System:           systemPrompt,
 	}
 	for _, m := range messages {
-		if m.Role == "system" {
-			req.System = m.Content
-			continue
-		}
 		req.Messages = append(req.Messages, bedrockMessage{
 			Role:    m.Role,
 			Content: []content{{Type: "text", Text: m.Content}},
 		})
 	}
+
+	// Cache breakpoint on the latest message: each request reads the prefix
+	// cached by the previous turn and extends it. Below the model's minimum
+	// cacheable prefix this is a silent no-op, so short conversations are
+	// unaffected.
+	if len(req.Messages) > 0 {
+		last := req.Messages[len(req.Messages)-1].Content
+		last[len(last)-1].CacheControl = &cacheControl{Type: "ephemeral"}
+	}
+
 	return json.Marshal(req)
 }
 
@@ -166,15 +185,11 @@ func parseStreamMeta(raw []byte, res *streamResult) {
 	var event struct {
 		Type    string `json:"type"`
 		Message struct {
-			ID    string `json:"id"`
-			Model string `json:"model"`
+			ID    string     `json:"id"`
+			Model string     `json:"model"`
+			Usage tokenUsage `json:"usage"`
 		} `json:"message"`
-		Usage struct {
-			InputTokens              int `json:"input_tokens"`
-			CacheCreationInputTokens int `json:"cache_creation_input_tokens"`
-			CacheReadInputTokens     int `json:"cache_read_input_tokens"`
-			OutputTokens             int `json:"output_tokens"`
-		} `json:"usage"`
+		Usage tokenUsage `json:"usage"`
 	}
 	if err := json.Unmarshal(raw, &event); err != nil {
 		return
@@ -183,11 +198,27 @@ func parseStreamMeta(raw []byte, res *streamResult) {
 	case "message_start":
 		res.messageID = event.Message.ID
 		res.model = event.Message.Model
+		mergeUsage(&res.usage, event.Message.Usage)
 	case "message_delta":
-		res.usage.InputTokens = event.Usage.InputTokens
-		res.usage.CacheCreationInputTokens = event.Usage.CacheCreationInputTokens
-		res.usage.CacheReadInputTokens = event.Usage.CacheReadInputTokens
-		res.usage.OutputTokens = event.Usage.OutputTokens
+		mergeUsage(&res.usage, event.Usage)
+	}
+}
+
+// mergeUsage overlays non-zero fields from src onto dst. Input and cache
+// token counts arrive on message_start, output tokens on message_delta —
+// neither event carries the full picture.
+func mergeUsage(dst *tokenUsage, src tokenUsage) {
+	if src.InputTokens > 0 {
+		dst.InputTokens = src.InputTokens
+	}
+	if src.CacheCreationInputTokens > 0 {
+		dst.CacheCreationInputTokens = src.CacheCreationInputTokens
+	}
+	if src.CacheReadInputTokens > 0 {
+		dst.CacheReadInputTokens = src.CacheReadInputTokens
+	}
+	if src.OutputTokens > 0 {
+		dst.OutputTokens = src.OutputTokens
 	}
 }
 

@@ -81,14 +81,16 @@ Alpine.store("chat", {
     if (!this.totals || !this.totals.context_window) return 0;
     return Math.min(
       100,
-      Math.round((this.totals.input_tokens / this.totals.context_window) * 100),
+      Math.round(
+        (this.totals.context_used_tokens / this.totals.context_window) * 100,
+      ),
     );
   },
 
   get contextNearLimit() {
     const t = this.totals;
     if (!t || !t.context_window || !t.last_input_tokens) return false;
-    const remaining = t.context_window - t.input_tokens;
+    const remaining = t.context_window - t.context_used_tokens;
     return remaining < t.last_input_tokens * 3;
   },
 });

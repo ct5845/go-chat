@@ -234,6 +234,10 @@ Alpine.data("chatBottomsheet", function () {
       return Alpine.store("chat").contextPercent + "% used";
     },
 
+    get contextUsedTokens() {
+      return (this._totals?.context_used_tokens ?? 0).toLocaleString();
+    },
+
     get totalInputTokens() {
       return (this._totals?.input_tokens ?? 0).toLocaleString();
     },

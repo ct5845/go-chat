@@ -117,6 +117,7 @@ type Totals struct {
 	MessageCount             int     `json:"message_count"`
 	AvgResponseMs            int64   `json:"avg_response_ms"`
 	LastInputTokens          int     `json:"last_input_tokens"`
+	ContextUsedTokens        int     `json:"context_used_tokens"`
 }
 
 func computeTotals(messages []llm.Message, modelID string) Totals {
@@ -134,6 +135,8 @@ func computeTotals(messages []llm.Message, modelID string) Totals {
 		t.CostUSD += m.Usage.CostUSD
 		t.MessageCount++
 		t.LastInputTokens = m.Usage.InputTokens
+		t.ContextUsedTokens = m.Usage.InputTokens + m.Usage.CacheCreationInputTokens +
+			m.Usage.CacheReadInputTokens + m.Usage.OutputTokens
 		if m.Usage.Timing.TTLBMs > 0 {
 			totalResponseMs += m.Usage.Timing.TTLBMs
 			responseCount++
