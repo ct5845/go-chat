@@ -15,12 +15,12 @@ import (
 )
 
 type Conversation struct {
-	ID       string        `json:"id"`
-	Title    string        `json:"title"`
-	Created  time.Time     `json:"created"`
-	Updated  time.Time     `json:"updated"`
-	Totals   Totals        `json:"totals"`
-	Messages []llm.Message `json:"messages"`
+	ID        string         `json:"id"`
+	Title     string         `json:"title"`
+	Created   time.Time      `json:"created"`
+	Updated   time.Time      `json:"updated"`
+	Totals    Totals         `json:"totals"`
+	Exchanges []llm.Exchange `json:"exchanges"`
 }
 
 type Summary struct {
@@ -54,18 +54,13 @@ func (s *Store) Load(id string) (*Conversation, error) {
 }
 
 func (s *Store) Save(c *Conversation) error {
-	if c.Title == "" {
-		for _, m := range c.Messages {
-			if m.Role == "user" {
-				c.Title = m.Content
-				if len(c.Title) > 80 {
-					c.Title = c.Title[:80] + "…"
-				}
-				break
-			}
+	if c.Title == "" && len(c.Exchanges) > 0 {
+		c.Title = c.Exchanges[0].Request
+		if len(c.Title) > 80 {
+			c.Title = c.Title[:80] + "…"
 		}
 	}
-	c.Totals = computeTotals(c.Messages, s.modelID)
+	c.Totals = computeTotals(c.Exchanges, s.modelID)
 	c.Updated = time.Now()
 	data, err := json.MarshalIndent(c, "", "  ")
 	if err != nil {
@@ -114,32 +109,34 @@ type Totals struct {
 	CacheReadInputTokens     int     `json:"cache_read_input_tokens"`
 	CostUSD                  float64 `json:"cost_usd"`
 	ContextWindow            int     `json:"context_window"`
-	MessageCount             int     `json:"message_count"`
+	ExchangeCount            int     `json:"exchange_count"`
 	AvgResponseMs            int64   `json:"avg_response_ms"`
 	LastInputTokens          int     `json:"last_input_tokens"`
 	ContextUsedTokens        int     `json:"context_used_tokens"`
 }
 
-func computeTotals(messages []llm.Message, modelID string) Totals {
+func computeTotals(exchanges []llm.Exchange, modelID string) Totals {
 	t := Totals{ContextWindow: llm.ContextWindow(modelID)}
 	var totalResponseMs int64
 	var responseCount int
-	for _, m := range messages {
-		if m.Usage == nil {
-			continue
-		}
-		t.InputTokens += m.Usage.InputTokens
-		t.OutputTokens += m.Usage.OutputTokens
-		t.CacheCreationInputTokens += m.Usage.CacheCreationInputTokens
-		t.CacheReadInputTokens += m.Usage.CacheReadInputTokens
-		t.CostUSD += m.Usage.CostUSD
-		t.MessageCount++
-		t.LastInputTokens = m.Usage.InputTokens
-		t.ContextUsedTokens = m.Usage.InputTokens + m.Usage.CacheCreationInputTokens +
-			m.Usage.CacheReadInputTokens + m.Usage.OutputTokens
-		if m.Usage.Timing.TTLBMs > 0 {
-			totalResponseMs += m.Usage.Timing.TTLBMs
+	for _, ex := range exchanges {
+		t.InputTokens += ex.Usage.InputTokens
+		t.OutputTokens += ex.Usage.OutputTokens
+		t.CacheCreationInputTokens += ex.Usage.CacheCreationInputTokens
+		t.CacheReadInputTokens += ex.Usage.CacheReadInputTokens
+		t.CostUSD += ex.Usage.CostUSD
+		t.ExchangeCount++
+		if ex.Usage.Timing.TTLBMs > 0 {
+			totalResponseMs += ex.Usage.Timing.TTLBMs
 			responseCount++
+		}
+		// Context pressure is set by the most recent invoke: what it carried
+		// is what the next request will carry again, plus its output.
+		if len(ex.Invocations) > 0 {
+			last := ex.Invocations[len(ex.Invocations)-1].Usage
+			t.LastInputTokens = last.InputTokens
+			t.ContextUsedTokens = last.InputTokens + last.CacheCreationInputTokens +
+				last.CacheReadInputTokens + last.OutputTokens
 		}
 	}
 	if responseCount > 0 {

@@ -9,6 +9,7 @@ import (
 	"ct-go-chat/src/infrastructure/config"
 	"ct-go-chat/src/infrastructure/fileserver"
 	"ct-go-chat/src/infrastructure/llm"
+	"ct-go-chat/src/infrastructure/llm/llmtools"
 	"ct-go-chat/src/infrastructure/reqlog"
 	"log/slog"
 	"net/http"
@@ -31,7 +32,7 @@ func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
 	var err error
-	bedrock, err := llm.NewBedrock(config.BedrockRegion, config.BedrockModelID)
+	bedrock, err := llm.NewBedrock(config.BedrockRegion, config.BedrockModelID, llmtools.All())
 	if err != nil {
 		slog.Error("Failed to initialise Bedrock", "error", err)
 		os.Exit(1)

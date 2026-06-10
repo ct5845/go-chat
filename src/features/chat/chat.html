@@ -7,7 +7,7 @@
       <span aria-hidden="true" class="icon">close</span>
     </a>
     <h1
-      class="text-lg leading-none"
+      class="text-lg leading-none truncate max-w-[15ch]"
       x-text="$store.chat.title || 'New Conversation'"
     ></h1>
   </header>
@@ -42,9 +42,10 @@
       x-show="$store.chat.isStreaming"
       class="flex items-center gap-4"
     >
-      <span class="text-on-surface-variant text-base italic"
-        >Responding...</span
-      >
+      <span
+        class="text-on-surface-variant text-base italic"
+        x-text="$store.chat.statusText"
+      ></span>
     </div>
   </div>
 

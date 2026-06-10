@@ -218,7 +218,7 @@ Alpine.data("chatBottomsheet", function () {
     },
 
     get totalMessages() {
-      const count = this._totals?.message_count ?? 0;
+      const count = this._totals?.exchange_count ?? 0;
       return count === 1 ? "1 message" : `${count} messages`;
     },
 

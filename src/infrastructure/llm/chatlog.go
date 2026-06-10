@@ -18,14 +18,14 @@ type chatLogEntry struct {
 	Events    []json.RawMessage `json:"events"`
 }
 
-func writeChatLog(invokeTime time.Time, id, model, userInput string, usage tokenUsage, events []json.RawMessage) {
+func writeChatLog(invokeTime time.Time, id, model, userInput string, usage tokenUsage, costUSD float64, events []json.RawMessage) {
 	entry := chatLogEntry{
 		ID:        id,
 		Timestamp: invokeTime.UTC().Format(time.RFC3339Nano),
 		Model:     model,
 		UserInput: userInput,
 		Usage:     usage,
-		CostUSD:   estimateCost(model, usage, 0),
+		CostUSD:   costUSD,
 		Events:    events,
 	}
 

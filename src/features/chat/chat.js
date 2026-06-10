@@ -49,10 +49,12 @@ Alpine.store("chat", {
   conversationID: "",
   title: "",
   isBlank: true,
+  activeTool: "",
 
   start(ac) {
     this._abortController = ac;
     this.isStreaming = true;
+    this.activeTool = "";
   },
 
   stop() {
@@ -61,6 +63,14 @@ Alpine.store("chat", {
       this._abortController = null;
     }
     this.isStreaming = false;
+    this.activeTool = "";
+  },
+
+  get statusText() {
+    if (this.activeTool) {
+      return this.activeTool.replaceAll("_", " ") + "...";
+    }
+    return "Responding...";
   },
 
   setConversation({ id, title, totals }) {
@@ -126,13 +136,13 @@ Alpine.data("chat", function () {
     node.querySelector(".message-text").textContent = text;
   }
 
-  function appendMessageUsage(messageNode, payload) {
-    if (!payload) return;
-    const { usage } = payload;
+  function appendMessageUsage(messageNode, exchange) {
+    if (!exchange?.usage || !exchange.id) return;
+    const { usage } = exchange;
     const node = document
       .getElementById("message-details")
       .content.cloneNode(true).firstElementChild;
-    node.setAttribute("id", usage.message_id);
+    node.setAttribute("id", exchange.id);
     node.querySelector(".input-tokens").textContent =
       usage.input_tokens.toLocaleString();
     node.querySelector(".cache-write-tokens").textContent =
@@ -151,7 +161,7 @@ Alpine.data("chat", function () {
     }
     const button = messageNode.querySelector(".message-details");
     button.after(node);
-    button.setAttribute("popovertarget", usage.message_id);
+    button.setAttribute("popovertarget", exchange.id);
   }
 
   function appendAssistantMessage(messages, before) {
@@ -174,20 +184,20 @@ Alpine.data("chat", function () {
         }, 60);
         scrollToBottom();
       },
-      finalise(payload) {
+      finalise(exchange) {
         if (renderTimer) clearTimeout(renderTimer);
         render();
 
         node.setAttribute("aria-live", "polite");
         node.querySelector(".assistant-badge").classList.remove("loading");
         node.querySelector(".output-tokens").textContent =
-          `${payload?.usage?.output_tokens?.toLocaleString()} tok`;
+          `${exchange?.usage?.output_tokens?.toLocaleString() ?? 0} tok`;
         node
           .querySelector(".message-copy")
           .addEventListener("click", (e) =>
             copyWithFeedback(e.currentTarget, rawText),
           );
-        appendMessageUsage(node, payload);
+        appendMessageUsage(node, exchange);
         node.querySelector(".message-toolbar").classList.remove("opacity-0");
       },
       cancel() {
@@ -207,19 +217,15 @@ Alpine.data("chat", function () {
   }
 
   function hydrateConversation(conv, messages, before) {
-    for (let i = 0; i < conv.messages.length; i++) {
-      const m = conv.messages[i];
-      if (m.role === "user") {
-        appendUserMessage(m.content, messages, before);
-      } else if (m.role === "assistant") {
-        if (m.cancelled) {
-          const reply = appendAssistantMessage(messages, before);
-          reply.cancel();
-        } else {
-          const reply = appendAssistantMessage(messages, before);
-          reply.appendWord(m.content);
-          reply.finalise({ usage: m.usage });
-        }
+    for (const ex of conv.exchanges) {
+      appendUserMessage(ex.request, messages, before);
+      const reply = appendAssistantMessage(messages, before);
+      if (ex.cancelled) {
+        if (ex.response) reply.appendWord(ex.response);
+        reply.cancel();
+      } else {
+        reply.appendWord(ex.response);
+        reply.finalise(ex);
       }
     }
     scrollToBottom();
@@ -243,7 +249,7 @@ Alpine.data("chat", function () {
       this.$el.addEventListener("chat-stop", () => this.onStop());
 
       const conv = <<< .ConversationJSON >>>;
-      if (conv?.messages?.length > 0) {
+      if (conv?.exchanges?.length > 0) {
         Alpine.store("chat").setConversation(conv);
         hideTabs();
         hydrateConversation(
@@ -269,6 +275,17 @@ Alpine.data("chat", function () {
         case "word":
           reply.appendWord(data);
           break;
+        case "tool_use":
+        case "tool_result": {
+          let tool = null;
+          try {
+            tool = JSON.parse(data);
+          } catch (_) {}
+          if (!tool) break;
+          Alpine.store("chat").activeTool =
+            type === "tool_use" ? tool.name : "";
+          break;
+        }
         case "done": {
           let payload = null;
           try {
@@ -287,7 +304,7 @@ Alpine.data("chat", function () {
           if (isNew && store.conversationID) {
             history.replaceState(null, "", "/chat/" + store.conversationID);
           }
-          reply.finalise(payload);
+          reply.finalise(payload?.exchange);
           this._activeReply = null;
           store.stop();
           break;

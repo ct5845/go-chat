@@ -5,7 +5,6 @@ import (
 	"ct-go-chat/src/infrastructure/llm"
 	"ct-go-chat/src/infrastructure/reqlog"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -26,7 +25,7 @@ type streamRequest struct {
 type doneEvent struct {
 	ConversationID string              `json:"conversation_id"`
 	Title          string              `json:"title"`
-	Usage          llm.Usage           `json:"usage"`
+	Exchange       llm.Exchange        `json:"exchange"`
 	Totals         conversation.Totals `json:"totals"`
 }
 
@@ -56,11 +55,6 @@ func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerF
 			}
 		}
 
-		conv.Messages = append(conv.Messages, llm.Message{
-			Role:    "user",
-			Content: req.Message,
-		})
-
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
@@ -72,43 +66,37 @@ func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerF
 		}
 
 		type result struct {
-			usage llm.Usage
-			err   error
+			exchange llm.Exchange
+			err      error
 		}
-		words := make(chan string)
+		events := make(chan llm.StreamEvent)
 		resCh := make(chan result, 1)
 
 		go func() {
-			var msgs []llm.Message
-			for _, m := range conv.Messages {
-				if !m.Cancelled {
-					msgs = append(msgs, m)
-				}
-			}
-			usage, err := bedrock.Respond(r.Context(), msgs, words)
-			resCh <- result{usage, err}
+			exchange, err := bedrock.Respond(r.Context(), conv.Exchanges, req.Message, events)
+			resCh <- result{exchange, err}
 		}()
 
-		var assistantText strings.Builder
-		for word := range words {
-			assistantText.WriteString(word)
-			writeSSE(w, "word", word)
+		for ev := range events {
+			switch ev.Type {
+			case llm.StreamText:
+				writeSSE(w, "word", ev.Text)
+			case llm.StreamToolUse, llm.StreamToolResult:
+				data, err := json.Marshal(ev.Tool)
+				if err != nil {
+					slog.Error("chat: marshal tool event", "error", err)
+					continue
+				}
+				writeSSE(w, string(ev.Type), string(data))
+			}
 			flusher.Flush()
 		}
 
 		res := <-resCh
-
-		assistant := llm.Message{
-			Role:    "assistant",
-			Content: assistantText.String(),
-			Usage:   &res.usage,
-		}
-		if errors.Is(res.err, llm.ErrCancelled) {
-			assistant.Cancelled = true
-		} else if res.err != nil {
+		if res.err != nil {
 			slog.Error("chat stream error", "error", res.err)
 		}
-		conv.Messages = append(conv.Messages, assistant)
+		conv.Exchanges = append(conv.Exchanges, res.exchange)
 
 		if err := store.Save(conv); err != nil {
 			slog.Error("chat: save conversation", "error", err)
@@ -117,7 +105,7 @@ func handleStream(store *conversation.Store, bedrock *llm.Bedrock) http.HandlerF
 		done := doneEvent{
 			ConversationID: conv.ID,
 			Title:          conv.Title,
-			Usage:          res.usage,
+			Exchange:       res.exchange,
 			Totals:         conv.Totals,
 		}
 		doneData, err := json.Marshal(done)
