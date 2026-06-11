@@ -22,6 +22,8 @@ func init() {
 		"chat_bubble",
 		"check",
 		"chevron_right",
+		"code",
+		"code_off",
 		"close",
 		"content_copy",
 		"data_usage",
@@ -29,6 +31,7 @@ func init() {
 		"history",
 		"home",
 		"info",
+		"ink_pen",
 		"keyboard_arrow_down",
 		"keyboard_arrow_left",
 		"keyboard_arrow_right",
@@ -41,6 +44,7 @@ func init() {
 		"send",
 		"stop",
 		"storage",
+		"tools_power_drill",
 	}
 	// The fonts API requires icon_names to be alphabetically sorted.
 	slices.Sort(names)

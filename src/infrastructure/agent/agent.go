@@ -82,14 +82,6 @@ func (a *Agent) Run(ctx context.Context, history []Exchange, request string, eve
 			return buildExchange(request, rounds, false), nil
 		}
 
-		// Separate this round's narration from the post-tool continuation
-		// so streamed (and persisted) text doesn't run together.
-		if round.Text != "" {
-			if !send(ctx, events, Event{Type: EventText, Text: "\n\n"}) {
-				return buildExchange(request, rounds, true), nil
-			}
-		}
-
 		calls, results, cancelled := a.runTools(ctx, resp.Blocks, events)
 		rounds[len(rounds)-1].ToolCalls = calls
 		if cancelled {

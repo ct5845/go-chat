@@ -44,7 +44,7 @@ async function* parseSseStream(reader) {
 
 Alpine.store("chat", {
   isStreaming: false,
-  debug: true,
+  debug: localStorage.getItem("debug") === "true",
   _abortController: null,
   totals: null,
   conversationID: "",
@@ -115,10 +115,13 @@ Alpine.data("chat", function () {
     window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
   }
 
+  function templateContent(id) {
+    return document.getElementById(id).content.cloneNode(true)
+      .firstElementChild;
+  }
+
   function cloneTemplate(id, messages, before) {
-    const node = document
-      .getElementById(id)
-      .content.cloneNode(true).firstElementChild;
+    const node = templateContent(id);
     messages.insertBefore(node, before);
     scrollToBottom();
     return node;
@@ -140,11 +143,8 @@ Alpine.data("chat", function () {
   function appendMessageUsage(messageNode, exchange) {
     if (!exchange?.usage || !exchange.id) return;
     const { usage } = exchange;
-    const popoverTrigger = document.getElementById("message-details-trigger")
-      .content.cloneNode(true).firstElementChild;
-    const popover = document
-      .getElementById("message-details")
-      .content.cloneNode(true).firstElementChild;
+    const popoverTrigger = templateContent("message-details-trigger");
+    const popover = templateContent("message-details");
     popover.setAttribute("id", exchange.id);
     popover.querySelector(".input-tokens").textContent =
       usage.input_tokens.toLocaleString();
@@ -169,19 +169,39 @@ Alpine.data("chat", function () {
     popoverTrigger.after(popover);
   }
 
-  function appendAssistantMessage(messages, before, opts) {
-    const { debug } = opts;
+  function appendAssistantMessage(messages, before) {
     const node = cloneTemplate("message-assistant", messages, before);
-    const textElement = node.querySelector(".message-text");
+    const segments = node.querySelector(".message-segments");
     let rawText = "";
+    let segmentText = "";
+    let segmentElement = null;
+    let openToolElement = null;
     let renderTimer = null;
 
     function render() {
-      textElement.innerHTML = markdownRenderer(rawText);
+      if (segmentElement) {
+        segmentElement.innerHTML = markdownRenderer(segmentText);
+      }
+    }
+
+    function flushRender() {
+      if (renderTimer) {
+        clearTimeout(renderTimer);
+        renderTimer = null;
+      }
+      render();
     }
 
     return {
       appendText(text) {
+        if (!segmentElement) {
+          const segment = templateContent("message-assistant-text");
+          segmentElement = segment.querySelector(".message-text");
+          segments.appendChild(segment);
+          segmentText = "";
+          if (rawText) rawText += "\n\n";
+        }
+        segmentText += text;
         rawText += text;
         if (renderTimer) return;
         renderTimer = setTimeout(() => {
@@ -190,9 +210,29 @@ Alpine.data("chat", function () {
         }, 60);
         scrollToBottom();
       },
+      appendTool(tool) {
+        flushRender();
+        segmentElement = null;
+
+        openToolElement = templateContent("message-tool");
+        openToolElement.querySelector(".tool-name").textContent = tool.name;
+        openToolElement.querySelector(".tool-input").textContent =
+          JSON.stringify(tool.input, null, 2);
+        segments.appendChild(openToolElement);
+        scrollToBottom();
+      },
+      toolResult(tool) {
+        if (!openToolElement) return;
+        const output = openToolElement.querySelector(".tool-output");
+        output.textContent = tool.result;
+        if (tool.is_error) {
+          output.classList.add("text-error");
+        }
+        openToolElement = null;
+        scrollToBottom();
+      },
       finalise(exchange) {
-        if (renderTimer) clearTimeout(renderTimer);
-        render();
+        flushRender();
 
         node.setAttribute("aria-live", "polite");
         node
@@ -204,11 +244,10 @@ Alpine.data("chat", function () {
         node.querySelector(".message-toolbar").classList.remove("opacity-0");
       },
       cancel() {
-        if (renderTimer) clearTimeout(renderTimer);
+        flushRender();
 
         const anchor = node.nextSibling;
-        if (rawText) {
-          render();
+        if (segments.childElementCount > 0) {
           node.querySelector(".assistant-badge")?.classList?.remove("loading");
         } else {
           node.remove();
@@ -219,15 +258,20 @@ Alpine.data("chat", function () {
     };
   }
 
-  function hydrateConversation(conv, messages, before, opts) {
+  function hydrateConversation(conv, messages, before) {
     for (const ex of conv.exchanges) {
       appendUserMessage(ex.request, messages, before);
-      const reply = appendAssistantMessage(messages, before, opts);
+      const reply = appendAssistantMessage(messages, before);
+      for (const round of ex.rounds ?? []) {
+        if (round.text) reply.appendText(round.text);
+        for (const call of round.tool_calls ?? []) {
+          reply.appendTool(call);
+          reply.toolResult(call);
+        }
+      }
       if (ex.cancelled) {
-        if (ex.response) reply.appendText(ex.response);
         reply.cancel();
       } else {
-        reply.appendText(ex.response);
         reply.finalise(ex);
       }
     }
@@ -259,7 +303,6 @@ Alpine.data("chat", function () {
           conv,
           this.$refs.messages,
           this.$refs.loadingIndicator,
-          { debug: Alpine.store("chat").debug }
         );
       }
     },
@@ -286,8 +329,13 @@ Alpine.data("chat", function () {
             tool = JSON.parse(data);
           } catch (_) {}
           if (!tool) break;
-          Alpine.store("chat").activeTool =
-            type === "tool_use" ? tool.name : "";
+          if (type === "tool_use") {
+            reply.appendTool(tool);
+            Alpine.store("chat").activeTool = tool.name;
+          } else {
+            reply.toolResult(tool);
+            Alpine.store("chat").activeTool = "";
+          }
           break;
         }
         case "done": {
@@ -316,6 +364,12 @@ Alpine.data("chat", function () {
       }
     },
 
+    toggleDebug() {
+      const store = Alpine.store("chat");
+      store.debug = !store.debug;
+      localStorage.setItem("debug", store.debug);
+    },
+
     async onSubmit(text) {
       const store = Alpine.store("chat");
       const before = this.$refs.loadingIndicator;
@@ -324,7 +378,7 @@ Alpine.data("chat", function () {
       store.isBlank = false;
       hideTabs();
 
-      const reply = appendAssistantMessage(this.$refs.messages, before, { debug: store.debug });
+      const reply = appendAssistantMessage(this.$refs.messages, before);
       this._activeReply = reply;
 
       const ac = new AbortController();
