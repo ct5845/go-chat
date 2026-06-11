@@ -3,7 +3,8 @@ package conversation
 import (
 	"cmp"
 	"crypto/rand"
-	"ct-go-chat/src/infrastructure/llm"
+	"ct-go-chat/src/infrastructure/agent"
+	"ct-go-chat/src/infrastructure/agent/bedrock"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -15,12 +16,12 @@ import (
 )
 
 type Conversation struct {
-	ID        string         `json:"id"`
-	Title     string         `json:"title"`
-	Created   time.Time      `json:"created"`
-	Updated   time.Time      `json:"updated"`
-	Totals    Totals         `json:"totals"`
-	Exchanges []llm.Exchange `json:"exchanges"`
+	ID        string           `json:"id"`
+	Title     string           `json:"title"`
+	Created   time.Time        `json:"created"`
+	Updated   time.Time        `json:"updated"`
+	Totals    Totals           `json:"totals"`
+	Exchanges []agent.Exchange `json:"exchanges"`
 }
 
 type Summary struct {
@@ -115,8 +116,8 @@ type Totals struct {
 	ContextUsedTokens        int     `json:"context_used_tokens"`
 }
 
-func computeTotals(exchanges []llm.Exchange, modelID string) Totals {
-	t := Totals{ContextWindow: llm.ContextWindow(modelID)}
+func computeTotals(exchanges []agent.Exchange, modelID string) Totals {
+	t := Totals{ContextWindow: bedrock.ContextWindow(modelID)}
 	var totalResponseMs int64
 	var responseCount int
 	for _, ex := range exchanges {
@@ -126,14 +127,14 @@ func computeTotals(exchanges []llm.Exchange, modelID string) Totals {
 		t.CacheReadInputTokens += ex.Usage.CacheReadInputTokens
 		t.CostUSD += ex.Usage.CostUSD
 		t.ExchangeCount++
-		if ex.Usage.Timing.TTLBMs > 0 {
-			totalResponseMs += ex.Usage.Timing.TTLBMs
+		if ex.Timing.TTLBMs > 0 {
+			totalResponseMs += ex.Timing.TTLBMs
 			responseCount++
 		}
-		// Context pressure is set by the most recent invoke: what it carried
+		// Context pressure is set by the most recent round: what it carried
 		// is what the next request will carry again, plus its output.
-		if len(ex.Invocations) > 0 {
-			last := ex.Invocations[len(ex.Invocations)-1].Usage
+		if len(ex.Rounds) > 0 {
+			last := ex.Rounds[len(ex.Rounds)-1].Usage
 			t.LastInputTokens = last.InputTokens
 			t.ContextUsedTokens = last.InputTokens + last.CacheCreationInputTokens +
 				last.CacheReadInputTokens + last.OutputTokens

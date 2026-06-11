@@ -1,15 +1,12 @@
 <main class="contents" x-data="chat">
   <header
     class="flex items-center gap-2 p-2 sticky top-0 z-10 bg-surface"
-    x-show="!$store.chat.isBlank"
+    x-show="!!$store.chat.title"
   >
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
       <span aria-hidden="true" class="icon">close</span>
     </a>
-    <h1
-      class="text-lg leading-none truncate max-w-[15ch]"
-      x-text="$store.chat.title || 'New Conversation'"
-    ></h1>
+    <h1 class="text-lg truncate max-w-[15ch]" x-text="$store.chat.title"></h1>
   </header>
 
   <div
@@ -40,8 +37,9 @@
       aria-atomic="true"
       aria-live="polite"
       x-show="$store.chat.isStreaming"
-      class="flex items-center gap-4"
+      class="flex items-center gap-2"
     >
+      <div aria-hidden="true" class="assistant-badge shrink-0 loading"></div>
       <span
         class="text-on-surface-variant text-base italic"
         x-text="$store.chat.statusText"
@@ -54,8 +52,10 @@
 
 <template id="message-user">
   <div role="group" aria-label="You" class="flex flex-col items-end">
-    <div class="bg-container-high rounded-xl rounded-br-none p-2 max-w-prose">
-      <p class="message-text select-all cursor-text"></p>
+    <div
+      class="bg-container-highest rounded-xl rounded-br-none p-2 max-w-[90%]"
+    >
+      <p class="message-text select-all max-w-prose cursor-text"></p>
     </div>
   </div>
 </template>
@@ -67,7 +67,6 @@
     class="self-start flex gap-2 max-w-full"
     aria-live="off"
   >
-    <div aria-hidden="true" class="assistant-badge shrink-0 loading"></div>
     <div class="max-w-full overflow-x-hidden">
       <div class="message-text"></div>
       <div
@@ -77,26 +76,23 @@
           <span aria-hidden="true" class="icon icon-opsz-20">content_copy</span>
           <span class="text-xs">Copy</span>
         </button>
-        <span
-          class="text-xs text-on-surface-variant opacity-50"
-          aria-hidden="true"
-          >•</span
-        >
-        <button
-          aria-label="Message details"
-          class="btn text-xs! text-on-surface-variant message-details"
-        >
-          <span aria-hidden="true" class="icon icon-opsz-14"
-            >arrow_downward</span
-          >
-          <span class="output-tokens">96 tok</span>
-          <span aria-hidden="true" class="icon icon-opsz-14"
-            >keyboard_arrow_down</span
-          >
-        </button>
       </div>
     </div>
   </div>
+</template>
+
+<template id="message-details-trigger">
+  <button
+    aria-label="Message details"
+    x-show="$store.chat.debug"
+    class="btn text-xs! text-on-surface-variant message-details pl-0! before:content-['•'] before:mr-1"
+  >
+    <span aria-hidden="true" class="icon icon-opsz-14">arrow_downward</span>
+    <span class="output-tokens"></span>
+    <span aria-hidden="true" class="icon icon-opsz-14"
+      >keyboard_arrow_down</span
+    >
+  </button>
 </template>
 
 <template id="message-details">

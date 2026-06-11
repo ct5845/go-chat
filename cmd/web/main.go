@@ -5,12 +5,14 @@ import (
 	"ct-go-chat/src/features/chat"
 	"ct-go-chat/src/features/conversation"
 	"ct-go-chat/src/features/home"
+	"ct-go-chat/src/infrastructure/agent"
+	"ct-go-chat/src/infrastructure/agent/bedrock"
 	"ct-go-chat/src/infrastructure/compression"
 	"ct-go-chat/src/infrastructure/config"
 	"ct-go-chat/src/infrastructure/fileserver"
-	"ct-go-chat/src/infrastructure/llm"
-	"ct-go-chat/src/infrastructure/llm/llmtools"
+	"ct-go-chat/src/infrastructure/prompts"
 	"ct-go-chat/src/infrastructure/reqlog"
+	"ct-go-chat/src/infrastructure/tools"
 	"log/slog"
 	"net/http"
 	"os"
@@ -31,12 +33,12 @@ func main() {
 func routes() *http.ServeMux {
 	mux := http.NewServeMux()
 
-	var err error
-	bedrock, err := llm.NewBedrock(config.BedrockRegion, config.BedrockModelID, llmtools.All())
+	client, err := bedrock.NewClient(config.BedrockRegion, config.BedrockModelID)
 	if err != nil {
-		slog.Error("Failed to initialise Bedrock", "error", err)
+		slog.Error("Failed to initialise Bedrock client", "error", err)
 		os.Exit(1)
 	}
+	chatAgent := agent.New(client, prompts.System(), tools.All())
 
 	store, err := conversation.NewStore(config.ConversationsDir, config.BedrockModelID)
 	if err != nil {
@@ -45,7 +47,7 @@ func routes() *http.ServeMux {
 	}
 
 	home.RegisterRoutes(mux)
-	chat.RegisterRoutes(mux, store, bedrock)
+	chat.RegisterRoutes(mux, store, chatAgent)
 	fileserver.RegisterRoutes(mux, "tmp/static/")
 
 	mux.HandleFunc("GET /favicon.ico", func(w http.ResponseWriter, r *http.Request) {

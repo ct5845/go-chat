@@ -9,7 +9,10 @@ import (
 
 //go:embed bottomsheet.html
 var bottomsheetHTML string
-var bottomsheetTpl = component.New("bottomsheet.html", bottomsheetHTML)
+
+//go:embed bottomsheet.js
+var bottomsheetJS string
+var bottomsheetTpl = component.WithAlpine("bottomsheet.html", bottomsheetHTML, bottomsheetJS)
 
 func createBottomSheet(id string) (template.HTML, error) {
 	content, err := bottomsheetTpl.Render(nil)

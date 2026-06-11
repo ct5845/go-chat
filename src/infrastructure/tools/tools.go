@@ -1,4 +1,5 @@
-package llmtools
+// Package tools holds the tool implementations the chat agent can run.
+package tools
 
 import (
 	"context"
@@ -9,15 +10,15 @@ import (
 	"strings"
 	"time"
 
-	"ct-go-chat/src/infrastructure/llm"
+	"ct-go-chat/src/infrastructure/agent"
 )
 
-func All() []llm.Tool {
-	return []llm.Tool{rollDice(), getTime()}
+func All() []agent.Tool {
+	return []agent.Tool{rollDice(), getTime()}
 }
 
-func rollDice() llm.Tool {
-	return llm.Tool{
+func rollDice() agent.Tool {
+	return agent.Tool{
 		Name:        "roll_dice",
 		Description: "Roll one or more dice and return the results. Call this whenever the user asks to roll dice or wants a random dice outcome — do not invent dice results yourself.",
 		InputSchema: json.RawMessage(`{
@@ -54,8 +55,8 @@ func rollDice() llm.Tool {
 	}
 }
 
-func getTime() llm.Tool {
-	return llm.Tool{
+func getTime() agent.Tool {
+	return agent.Tool{
 		Name:        "get_time",
 		Description: "Get the current date and time in the server's local timezone. Call this whenever the user asks what the time or date is — your training data does not know the current time.",
 		InputSchema: json.RawMessage(`{"type": "object", "properties": {}}`),

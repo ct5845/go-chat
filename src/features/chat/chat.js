@@ -44,6 +44,7 @@ async function* parseSseStream(reader) {
 
 Alpine.store("chat", {
   isStreaming: false,
+  debug: true,
   _abortController: null,
   totals: null,
   conversationID: "",
@@ -68,7 +69,7 @@ Alpine.store("chat", {
 
   get statusText() {
     if (this.activeTool) {
-      return this.activeTool.replaceAll("_", " ") + "...";
+      return `[${this.activeTool}]...`;
     }
     return "Responding...";
   },
@@ -139,32 +140,37 @@ Alpine.data("chat", function () {
   function appendMessageUsage(messageNode, exchange) {
     if (!exchange?.usage || !exchange.id) return;
     const { usage } = exchange;
-    const node = document
+    const popoverTrigger = document.getElementById("message-details-trigger")
+      .content.cloneNode(true).firstElementChild;
+    const popover = document
       .getElementById("message-details")
       .content.cloneNode(true).firstElementChild;
-    node.setAttribute("id", exchange.id);
-    node.querySelector(".input-tokens").textContent =
+    popover.setAttribute("id", exchange.id);
+    popover.querySelector(".input-tokens").textContent =
       usage.input_tokens.toLocaleString();
-    node.querySelector(".cache-write-tokens").textContent =
+    popover.querySelector(".cache-write-tokens").textContent =
       usage.cache_creation_input_tokens.toLocaleString();
-    node.querySelector(".cache-read-tokens").textContent =
+    popover.querySelector(".cache-read-tokens").textContent =
       usage.cache_read_input_tokens.toLocaleString();
-    node.querySelector(".output-tokens").textContent =
+    popover.querySelector(".output-tokens").textContent =
       usage.output_tokens.toLocaleString();
-    node.querySelector(".cost").textContent =
+    popover.querySelector(".cost").textContent =
       usage.cost_usd < 0.000001
         ? "<$0.000001"
         : "$" + usage.cost_usd.toFixed(6);
-    if (usage.timing) {
-      node.querySelector(".ttfb").textContent = usage.timing.ttfb_ms + " ms";
-      node.querySelector(".ttlb").textContent = usage.timing.ttlb_ms + " ms";
+    if (exchange.timing) {
+      popover.querySelector(".ttfb").textContent = exchange.timing.ttfb_ms + " ms";
+      popover.querySelector(".ttlb").textContent = exchange.timing.ttlb_ms + " ms";
     }
-    const button = messageNode.querySelector(".message-details");
-    button.after(node);
-    button.setAttribute("popovertarget", exchange.id);
+    popoverTrigger.querySelector(".output-tokens").textContent = `${usage.output_tokens.toLocaleString()} tok`
+    popoverTrigger.setAttribute("popovertarget", exchange.id);
+
+    messageNode.querySelector(".message-copy").after(popoverTrigger);
+    popoverTrigger.after(popover);
   }
 
-  function appendAssistantMessage(messages, before) {
+  function appendAssistantMessage(messages, before, opts) {
+    const { debug } = opts;
     const node = cloneTemplate("message-assistant", messages, before);
     const textElement = node.querySelector(".message-text");
     let rawText = "";
@@ -175,8 +181,8 @@ Alpine.data("chat", function () {
     }
 
     return {
-      appendWord(word) {
-        rawText += word;
+      appendText(text) {
+        rawText += text;
         if (renderTimer) return;
         renderTimer = setTimeout(() => {
           renderTimer = null;
@@ -189,9 +195,6 @@ Alpine.data("chat", function () {
         render();
 
         node.setAttribute("aria-live", "polite");
-        node.querySelector(".assistant-badge").classList.remove("loading");
-        node.querySelector(".output-tokens").textContent =
-          `${exchange?.usage?.output_tokens?.toLocaleString() ?? 0} tok`;
         node
           .querySelector(".message-copy")
           .addEventListener("click", (e) =>
@@ -206,7 +209,7 @@ Alpine.data("chat", function () {
         const anchor = node.nextSibling;
         if (rawText) {
           render();
-          node.querySelector(".assistant-badge").classList.remove("loading");
+          node.querySelector(".assistant-badge")?.classList?.remove("loading");
         } else {
           node.remove();
         }
@@ -216,15 +219,15 @@ Alpine.data("chat", function () {
     };
   }
 
-  function hydrateConversation(conv, messages, before) {
+  function hydrateConversation(conv, messages, before, opts) {
     for (const ex of conv.exchanges) {
       appendUserMessage(ex.request, messages, before);
-      const reply = appendAssistantMessage(messages, before);
+      const reply = appendAssistantMessage(messages, before, opts);
       if (ex.cancelled) {
-        if (ex.response) reply.appendWord(ex.response);
+        if (ex.response) reply.appendText(ex.response);
         reply.cancel();
       } else {
-        reply.appendWord(ex.response);
+        reply.appendText(ex.response);
         reply.finalise(ex);
       }
     }
@@ -256,6 +259,7 @@ Alpine.data("chat", function () {
           conv,
           this.$refs.messages,
           this.$refs.loadingIndicator,
+          { debug: Alpine.store("chat").debug }
         );
       }
     },
@@ -272,8 +276,8 @@ Alpine.data("chat", function () {
 
     handleEvent(reply, { type, data }) {
       switch (type) {
-        case "word":
-          reply.appendWord(data);
+        case "text":
+          reply.appendText(data);
           break;
         case "tool_use":
         case "tool_result": {
@@ -320,7 +324,7 @@ Alpine.data("chat", function () {
       store.isBlank = false;
       hideTabs();
 
-      const reply = appendAssistantMessage(this.$refs.messages, before);
+      const reply = appendAssistantMessage(this.$refs.messages, before, { debug: store.debug });
       this._activeReply = reply;
 
       const ac = new AbortController();

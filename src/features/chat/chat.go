@@ -10,7 +10,7 @@ import (
 	"ct-go-chat/src/features/chat/history"
 	"ct-go-chat/src/features/conversation"
 	"ct-go-chat/src/features/nav"
-	"ct-go-chat/src/infrastructure/llm"
+	"ct-go-chat/src/infrastructure/agent"
 	"ct-go-chat/src/infrastructure/reqlog"
 	_ "embed"
 	"encoding/json"
@@ -29,10 +29,10 @@ var chatJS string
 
 var chatTmpl = component.WithAlpine("chat.html", chatHTML, chatJS)
 
-func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, bedrock *llm.Bedrock) {
+func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, chatAgent *agent.Agent) {
 	mux.HandleFunc("GET /chat", handleGet)
 	mux.HandleFunc("GET /chat/{conversation}", handleGetConversation(store))
-	chatstream.RegisterRoutes(mux, store, bedrock)
+	chatstream.RegisterRoutes(mux, store, chatAgent)
 	history.RegisterRoutes(mux, store)
 }
 

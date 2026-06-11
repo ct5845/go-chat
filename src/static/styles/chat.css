@@ -99,7 +99,7 @@
   max-width: 100%;
 
   thead {
-    @apply border-b-2 border-outline rounded-t-2xl bg-secondary-container text-on-secondary-container;
+    @apply border-b-2 border-outline;
   }
 
   tbody {

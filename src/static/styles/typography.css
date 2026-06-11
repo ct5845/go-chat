@@ -74,15 +74,15 @@
   }
 
   pre {
-    @apply bg-container-highest rounded-md p-2 max-w-full overflow-x-auto;
+    @apply bg-container-lowest border border-outline-variant rounded-md p-2 max-w-full overflow-x-auto;
 
     code {
-      @apply px-0;
+      @apply px-0 bg-transparent;
     }
   }
 
   blockquote {
-    @apply bg-secondary-container border-l-4 border-secondary rounded-md p-2 max-w-full;
+    @apply bg-container-lowest border border-outline-variant border-l-4 border-l-secondary rounded-md p-2 max-w-full;
 
     blockquote {
       @apply shadow-md mt-2;
@@ -94,7 +94,7 @@
   }
 
   code {
-    @apply bg-container-highest rounded-md px-1;
+    @apply bg-container-high rounded-md px-1;
     overflow-wrap: break-word;
   }
 
