@@ -17,7 +17,11 @@ import (
 
 //go:embed history.html
 var historyHTML string
-var historyTmpl = component.New("history.html", historyHTML)
+
+//go:embed history.js
+var historyJS string
+
+var historyTmpl = component.WithIIFE("history.html", historyHTML, historyJS)
 
 func formatUpdated(t, now time.Time) string {
 	diff := now.Sub(t)

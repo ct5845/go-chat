@@ -7,18 +7,6 @@
       <span aria-hidden="true" class="icon">close</span>
     </a>
     <h1 class="text-lg truncate max-w-[15ch]" x-text="$store.chat.title"></h1>
-    <div class="grow"></div>
-    <button
-      class="btn-outline text-xs!"
-      @click="toggleDebug()"
-      :class="$store.chat.debug ? 'bg-primary-container': ''"
-    >
-      <span
-        class="icon icon-opsz-14"
-        x-text="$store.chat.debug ? 'code' : 'code_off'"
-      ></span>
-      <span>debug</span>
-    </button>
   </header>
 
   <div
@@ -82,12 +70,15 @@
     <div class="max-w-full overflow-x-hidden">
       <div
         class="message-segments flex flex-col gap-2"
-        :class="$store.chat.debug ? 'gap-4' : 'gap-2'"
+        :class="$store.debug.value ? 'gap-4' : 'gap-2'"
       ></div>
-      <div class="message-toolbar flex items-center justify-start opacity-0">
+      <div
+        :class="$store.debug.value ? '' : '-mx-2'"
+        class="message-toolbar flex items-center justify-start opacity-0"
+      >
         <span
           aria-hidden="true"
-          x-show="$store.chat.debug"
+          x-show="$store.debug.value"
           class="icon icon-opsz-20 mt-1"
         ></span>
         <button aria-label="Copy response" class="btn message-copy">
@@ -104,11 +95,11 @@
     role="group"
     aria-label="Assistant text"
     class="gap-2"
-    :class="$store.chat.debug && 'grid grid-cols-[auto_1fr]'"
+    :class="$store.debug.value && 'grid grid-cols-[auto_1fr]'"
   >
     <span
       aria-hidden="true"
-      x-show="$store.chat.debug"
+      x-show="$store.debug.value"
       class="icon icon-opsz-20 text-secondary mt-1"
       >line_start_circle</span
     >
@@ -120,7 +111,7 @@
   <div
     role="group"
     aria-label="Tool use"
-    x-show="$store.chat.debug"
+    x-show="$store.debug.value"
     class="grid grid-cols-[auto_1fr] gap-2"
   >
     <span aria-hidden="true" class="icon text-secondary icon-opsz-20 mt-1"
@@ -156,7 +147,7 @@
 <template id="message-details-trigger">
   <button
     aria-label="Message details"
-    x-show="$store.chat.debug"
+    x-show="$store.debug.value"
     class="btn text-xs! text-on-surface-variant message-details pl-0! before:content-['•'] before:mr-1"
   >
     <span aria-hidden="true" class="icon icon-opsz-14">arrow_downward</span>

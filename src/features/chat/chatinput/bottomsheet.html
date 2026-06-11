@@ -1,6 +1,6 @@
 <div x-data="chatBottomsheet" class="p-2 flex flex-col gap-2">
   <h3 class="text-xs px-4 text-on-surface-variant">Usage details</h3>
-  <template x-if="$store.chat.debug">
+  <template x-if="$store.debug.value">
     <div class="px-4">
       <span
         class="text-3xl font-bold"
@@ -33,7 +33,7 @@
         </div>
         <div>
           <span x-text="percentOfContextWindow"></span>
-          <template x-if="$store.chat.debug">
+          <template x-if="$store.debug.value">
             <span class="contents">
               <span>•</span>
               <span x-text="contextUsedTokens"></span>
@@ -44,7 +44,7 @@
         </div>
       </dd>
     </dl>
-    <template x-if="$store.chat.debug">
+    <template x-if="$store.debug.value">
       <div class="contents *:rounded-2xl *:bg-container *:p-4">
         <dl class="flex flex-col gap-2">
           <dt class="flex items-center gap-2">

@@ -32,6 +32,7 @@ var chatTmpl = component.WithAlpine("chat.html", chatHTML, chatJS)
 func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, chatAgent *agent.Agent) {
 	mux.HandleFunc("GET /chat", handleGet)
 	mux.HandleFunc("GET /chat/{conversation}", handleGetConversation(store))
+	mux.HandleFunc("DELETE /chat/{conversation}", handleDeleteConversation(store))
 	chatstream.RegisterRoutes(mux, store, chatAgent)
 	history.RegisterRoutes(mux, store)
 }
@@ -68,6 +69,21 @@ func handleGetConversation(store *conversation.Store) http.HandlerFunc {
 		}
 
 		io.WriteString(w, string(rendered))
+	}
+}
+
+func handleDeleteConversation(store *conversation.Store) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		defer reqlog.Track(r.Context(), "chat.handleDeleteConversation", "")()
+
+		id := r.PathValue("conversation")
+		if err := store.Delete(id); err != nil {
+			slog.Error("Failed to delete conversation", "error", err, "id", id)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 

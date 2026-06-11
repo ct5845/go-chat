@@ -3,6 +3,7 @@ package layouttabbed
 import (
 	"ct-go-chat/src/components/component"
 	"ct-go-chat/src/components/page"
+	"ct-go-chat/src/components/webcli"
 	_ "embed"
 	"html/template"
 )
@@ -18,7 +19,14 @@ type Options struct {
 }
 
 func Render(options Options) (template.HTML, error) {
-	return comp.Render(options)
+	webCLI, err := webcli.Render()
+	if err != nil {
+		return "", err
+	}
+	return comp.Render(struct {
+		Options
+		WebCLI template.HTML
+	}{options, webCLI})
 }
 
 func RenderPage(pageOptions page.Options, options Options) (template.HTML, error) {

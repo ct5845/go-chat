@@ -44,7 +44,6 @@ async function* parseSseStream(reader) {
 
 Alpine.store("chat", {
   isStreaming: false,
-  debug: localStorage.getItem("debug") === "true",
   _abortController: null,
   totals: null,
   conversationID: "",

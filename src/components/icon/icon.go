@@ -27,6 +27,7 @@ func init() {
 		"close",
 		"content_copy",
 		"data_usage",
+		"delete",
 		"forum",
 		"history",
 		"home",
@@ -38,12 +39,15 @@ func init() {
 		"line_end_square",
 		"line_start_circle",
 		"menu",
+		"more_vert",
 		"mic",
 		"schedule",
 		"search",
 		"send",
 		"stop",
 		"storage",
+		"toggle_off",
+		"toggle_on",
 		"tools_power_drill",
 	}
 	// The fonts API requires icon_names to be alphabetically sorted.

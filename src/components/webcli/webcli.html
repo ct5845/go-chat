@@ -1,0 +1,61 @@
+<div x-data="webcli">
+  <dialog
+    x-ref="dialog"
+    @close="onClose()"
+    class="m-auto w-[min(90vw,24rem)] rounded-2xl bg-surface text-on-surface font-mono text-sm backdrop:bg-scrim/50"
+  >
+    <div
+      x-ref="output"
+      x-show="lines.length > 0"
+      aria-live="polite"
+      class="max-h-48 overflow-y-auto px-4 pt-4 text-on-surface-variant"
+    >
+      <template x-for="line in lines">
+        <p x-text="line"></p>
+      </template>
+    </div>
+
+    <form @submit.prevent="run()" class="flex items-center gap-2 px-4 py-3">
+      <span aria-hidden="true">&gt;</span>
+      <input
+        x-ref="input"
+        x-model="input"
+        @keydown.down.prevent="selectNext()"
+        @keydown.up.prevent="selectPrev()"
+        @keydown.tab.prevent="complete()"
+        type="text"
+        autofocus
+        autocomplete="off"
+        autocapitalize="off"
+        spellcheck="false"
+        aria-label="Command input"
+        class="grow bg-transparent outline-none"
+      />
+    </form>
+
+    <ul
+      x-show="suggestions.length > 0"
+      role="listbox"
+      aria-label="Command suggestions"
+      class="border-t border-outline-variant py-1"
+    >
+      <template
+        x-for="(suggestion, index) in suggestions"
+        :key="suggestion.label"
+      >
+        <li
+          role="option"
+          :aria-selected="index === selected"
+          :class="index === selected ? 'bg-primary-container text-on-primary-container' : ''"
+          @click="complete(index); $refs.input.focus()"
+          class="cursor-pointer px-4 py-1 flex justify-between items-center"
+        >
+          <span x-text="suggestion.label"></span>
+          <span x-show="index === selected" class="text-2xs"
+            >(Tab to insert)</span
+          >
+        </li>
+      </template>
+    </ul>
+  </dialog>
+</div>

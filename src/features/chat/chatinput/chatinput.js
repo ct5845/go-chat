@@ -196,7 +196,7 @@ Alpine.data("chatInput", function () {
     get totalState() {
       return {
         show:
-          (this.$store.chat.debug || this.$store.chat.contextPercent > 75) &&
+          (this.$store.debug.value || this.$store.chat.contextPercent > 75) &&
           !!this.$store.chat.totalCost &&
           !this.$store.chat.isStreaming &&
           !this.isListening,

@@ -13,4 +13,21 @@
       >
     </li>
   </ul>
+  <ul class="menu">
+    <li class="menu-item">
+      <button
+        class="contents"
+        :aria-pressed="$store.debug.value"
+        @click="$store.debug.toggle()"
+      >
+        <span class="text-left grow">Debug</span>
+        <span
+          aria-hidden="true"
+          class="icon"
+          :class="$store.debug.value ? 'text-primary icon-fill-1': ''"
+          x-text="$store.debug.value ? 'toggle_on' : 'toggle_off'"
+        ></span>
+      </button>
+    </li>
+  </ul>
 </nav>

@@ -21,6 +21,7 @@ type Conversation struct {
 	Created   time.Time        `json:"created"`
 	Updated   time.Time        `json:"updated"`
 	Totals    Totals           `json:"totals"`
+	Deleted   bool             `json:"deleted,omitempty"`
 	Exchanges []agent.Exchange `json:"exchanges"`
 }
 
@@ -73,6 +74,15 @@ func (s *Store) Save(c *Conversation) error {
 	return nil
 }
 
+func (s *Store) Delete(id string) error {
+	c, err := s.Load(id)
+	if err != nil {
+		return err
+	}
+	c.Deleted = true
+	return s.Save(c)
+}
+
 func (s *Store) List() ([]Summary, error) {
 	entries, err := os.ReadDir(s.dir)
 	if err != nil {
@@ -89,6 +99,9 @@ func (s *Store) List() ([]Summary, error) {
 		}
 		var c Conversation
 		if err := json.Unmarshal(data, &c); err != nil {
+			continue
+		}
+		if c.Deleted {
 			continue
 		}
 		summaries = append(summaries, Summary{
