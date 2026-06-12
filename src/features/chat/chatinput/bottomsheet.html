@@ -5,11 +5,11 @@
       <span
         class="text-3xl font-bold"
         aria-label="Conversation cost ($)"
-        x-text="totalCost"
+        x-text="display.cost"
       ></span>
       <span
         class="text-on-surface-variant text-sm"
-        x-text="totalMessages"
+        x-text="display.messages"
       ></span>
     </div>
   </template>
@@ -36,9 +36,9 @@
           <template x-if="$store.debug.value">
             <span class="contents">
               <span>•</span>
-              <span x-text="contextUsedTokens"></span>
+              <span x-text="display.context_used_tokens"></span>
               /
-              <span class="text-xs" x-text="contextWindow"></span>
+              <span class="text-xs" x-text="display.context_window"></span>
             </span>
           </template>
         </div>
@@ -54,7 +54,7 @@
             <span class="text-xs font-light">Input</span>
           </dt>
           <dd>
-            <span class="text-lg font-bold" x-text="totalInputTokens"></span>
+            <span class="text-lg font-bold" x-text="display.input_tokens"></span>
             <span class="text-sm text-on-surface-variant">tokens</span>
           </dd>
         </dl>
@@ -66,7 +66,7 @@
             <span class="text-xs font-light">Output</span>
           </dt>
           <dd>
-            <span class="text-lg font-bold" x-text="totalOutputTokens"></span>
+            <span class="text-lg font-bold" x-text="display.output_tokens"></span>
             <span class="text-sm text-on-surface-variant">tokens</span>
           </dd>
         </dl>
@@ -78,7 +78,10 @@
             <span class="text-xs font-light">Cache Read</span>
           </dt>
           <dd>
-            <span class="text-lg font-bold" x-text="totalCacheRead"></span>
+            <span
+              class="text-lg font-bold"
+              x-text="display.cache_read_input_tokens"
+            ></span>
             <span class="text-sm text-on-surface-variant">tokens</span>
           </dd>
         </dl>
@@ -90,7 +93,7 @@
           <dd>
             <span
               class="text-lg font-semibold"
-              x-text="averageResponseTime"
+              x-text="display.avg_response"
             ></span>
           </dd>
         </dl>

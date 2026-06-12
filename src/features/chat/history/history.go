@@ -13,7 +13,6 @@ import (
 	"log/slog"
 	"math"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -84,37 +83,11 @@ type summaryRow struct {
 	ContextWindow          string
 }
 
-func formatCost(costUSD float64) string {
-	if costUSD < 0.000001 {
-		return "<$0.000001"
-	}
-	return fmt.Sprintf("$%.6f", costUSD)
-}
-
-func formatMessageCount(count int) string {
-	if count == 1 {
-		return "1 message"
-	}
-	return fmt.Sprintf("%d messages", count)
-}
-
 func contextWindowUsage(t conversation.Totals) int {
 	if t.ContextWindow == 0 {
 		return 0
 	}
 	return min(100, int(math.Round(float64(t.ContextUsedTokens)/float64(t.ContextWindow)*100)))
-}
-
-func formatThousands(n int) string {
-	digits := strconv.Itoa(n)
-	var out []byte
-	for i := 0; i < len(digits); i++ {
-		if i > 0 && (len(digits)-i)%3 == 0 {
-			out = append(out, ',')
-		}
-		out = append(out, digits[i])
-	}
-	return string(out)
 }
 
 func renderPage(store *conversation.Store) (template.HTML, error) {
@@ -127,16 +100,17 @@ func renderPage(store *conversation.Store) (template.HTML, error) {
 	rows := make([]summaryRow, len(summaries))
 	for i, s := range summaries {
 		usage := contextWindowUsage(s.Totals)
+		display := s.Totals.Display()
 		rows[i] = summaryRow{
 			ID:                     s.ID,
 			Title:                  s.Title,
 			Updated:                formatUpdated(s.Updated, now),
-			TotalCost:              formatCost(s.Totals.CostUSD),
-			TotalMessages:          formatMessageCount(s.Totals.ExchangeCount),
+			TotalCost:              display.Cost,
+			TotalMessages:          display.Messages,
 			ContextWindowUsage:     usage,
 			PercentOfContextWindow: fmt.Sprintf("%d%% used", usage),
-			ContextUsedTokens:      formatThousands(s.Totals.ContextUsedTokens),
-			ContextWindow:          formatThousands(s.Totals.ContextWindow),
+			ContextUsedTokens:      display.ContextUsedTokens,
+			ContextWindow:          display.ContextWindow,
 		}
 	}
 

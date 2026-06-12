@@ -2,7 +2,7 @@
 
 ## Idioms and Standard Library
 
-Write idiomatic Go. Follow standard Go conventions for naming, error handling, and package organisation. Before reaching for a third-party library, ask whether the standard library (`net/http`, `encoding/json`, `html/template`, etc.) covers the need. Add a dependency only when it provides significant, non-trivial value over stdlib.
+Write idiomatic Go. Follow standard Go conventions for naming, error handling, and package organisation. Before reaching for a third-party library, ask whether the standard library (`net/http`, `encoding/json`, `html/template`, etc.) covers the need. Modules maintained by the Go team (`golang.org/x/...`) count as stdlib for this purpose — use them freely. Add any other dependency only when it provides significant, non-trivial value over stdlib.
 
 File names use lowercase with no hyphens — concatenate words directly (e.g. `welcomecard.go`, not `welcome-card.go`). Underscores are reserved for test files (`foo_test.go`) and platform-specific build files (`foo_windows.go`).
 

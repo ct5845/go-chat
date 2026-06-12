@@ -80,13 +80,6 @@ Alpine.store("chat", {
     this.isBlank = !id;
   },
 
-  get totalCost() {
-    if (!this.totals) return null;
-    return this.totals.cost_usd < 0.000001
-      ? "<$0.000001"
-      : "$" + this.totals.cost_usd.toFixed(6);
-  },
-
   get contextPercent() {
     if (!this.totals || !this.totals.context_window) return 0;
     return Math.min(
@@ -146,22 +139,19 @@ Alpine.data("chat", function () {
     const popover = templateContent("message-details");
     popover.setAttribute("id", exchange.id);
     popover.querySelector(".input-tokens").textContent =
-      usage.input_tokens.toLocaleString();
+      usage.display.input_tokens;
     popover.querySelector(".cache-write-tokens").textContent =
-      usage.cache_creation_input_tokens.toLocaleString();
+      usage.display.cache_creation_input_tokens;
     popover.querySelector(".cache-read-tokens").textContent =
-      usage.cache_read_input_tokens.toLocaleString();
+      usage.display.cache_read_input_tokens;
     popover.querySelector(".output-tokens").textContent =
-      usage.output_tokens.toLocaleString();
-    popover.querySelector(".cost").textContent =
-      usage.cost_usd < 0.000001
-        ? "<$0.000001"
-        : "$" + usage.cost_usd.toFixed(6);
+      usage.display.output_tokens;
+    popover.querySelector(".cost").textContent = usage.display.cost;
     if (exchange.timing) {
       popover.querySelector(".ttfb").textContent = exchange.timing.ttfb_ms + " ms";
       popover.querySelector(".ttlb").textContent = exchange.timing.ttlb_ms + " ms";
     }
-    popoverTrigger.querySelector(".output-tokens").textContent = `${usage.output_tokens.toLocaleString()} tok`
+    popoverTrigger.querySelector(".output-tokens").textContent = `${usage.display.output_tokens} tok`
     popoverTrigger.setAttribute("popovertarget", exchange.id);
 
     messageNode.querySelector(".message-copy").after(popoverTrigger);

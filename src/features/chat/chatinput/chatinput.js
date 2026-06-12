@@ -197,10 +197,9 @@ Alpine.data("chatInput", function () {
       return {
         show:
           (this.$store.debug.value || this.$store.chat.contextPercent > 75) &&
-          !!this.$store.chat.totalCost &&
+          !!this.$store.chat.totals &&
           !this.$store.chat.isStreaming &&
           !this.isListening,
-        totalCost: this.$store.chat.totalCost,
       };
     },
   };

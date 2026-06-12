@@ -131,6 +131,60 @@ type Totals struct {
 	ContextUsedTokens        int     `json:"context_used_tokens"`
 }
 
+// TotalsDisplay carries the pre-formatted strings the UI shows, so number
+// formatting lives in Go rather than being repeated client-side. Raw numbers
+// stay in Totals for the values the client genuinely computes from (the
+// context ring percentage).
+type TotalsDisplay struct {
+	Cost                 string `json:"cost"`
+	Messages             string `json:"messages"`
+	InputTokens          string `json:"input_tokens"`
+	OutputTokens         string `json:"output_tokens"`
+	CacheReadInputTokens string `json:"cache_read_input_tokens"`
+	ContextUsedTokens    string `json:"context_used_tokens"`
+	ContextWindow        string `json:"context_window"`
+	AvgResponse          string `json:"avg_response"`
+}
+
+func (t Totals) Display() TotalsDisplay {
+	return TotalsDisplay{
+		Cost:                 bedrock.DisplayCost(t.CostUSD),
+		Messages:             formatMessageCount(t.ExchangeCount),
+		InputTokens:          bedrock.DisplayInt(t.InputTokens),
+		OutputTokens:         bedrock.DisplayInt(t.OutputTokens),
+		CacheReadInputTokens: bedrock.DisplayInt(t.CacheReadInputTokens),
+		ContextUsedTokens:    bedrock.DisplayInt(t.ContextUsedTokens),
+		ContextWindow:        bedrock.DisplayInt(t.ContextWindow),
+		AvgResponse:          formatAvgResponse(t.AvgResponseMs),
+	}
+}
+
+func (t Totals) MarshalJSON() ([]byte, error) {
+	type raw Totals
+	return json.Marshal(struct {
+		raw
+		Display TotalsDisplay `json:"display"`
+	}{raw(t), t.Display()})
+}
+
+func formatMessageCount(count int) string {
+	if count == 1 {
+		return "1 message"
+	}
+	return fmt.Sprintf("%d messages", count)
+}
+
+func formatAvgResponse(ms int64) string {
+	switch {
+	case ms == 0:
+		return "—"
+	case ms >= 1000:
+		return fmt.Sprintf("%.1f s", float64(ms)/1000)
+	default:
+		return fmt.Sprintf("%d ms", ms)
+	}
+}
+
 func computeTotals(exchanges []agent.Exchange, modelID string) Totals {
 	t := Totals{ContextWindow: bedrock.ContextWindow(modelID)}
 	var totalResponseMs int64
