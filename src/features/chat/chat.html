@@ -117,7 +117,7 @@
     <span aria-hidden="true" class="icon text-secondary icon-opsz-20 mt-1"
       >tools_power_drill</span
     >
-    <details class="group">
+    <details class="group max-w-full overflow-hidden">
       <summary
         class="font-semibold cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center gap-1"
       >
@@ -129,15 +129,17 @@
         >
       </summary>
       <div
-        class="bg-container-lowest rounded-md border border-outline text-xs grid grid-cols-[auto_1fr] *:p-2 items-center mt-2"
+        class="bg-container-lowest rounded-md border border-outline text-xs grid grid-cols-[auto_1fr] *:p-2 items-center mt-2 max-w-full"
       >
         <span>IN</span>
-        <div>
+        <div class="max-w-full overflow-hidden">
           <pre class="max-h-24"><code class="tool-input"></code></pre>
         </div>
         <span>OUT</span>
-        <div>
-          <pre class="max-h-32"><code class="tool-output"></code></pre>
+        <div class="max-w-full overflow-hidden">
+          <pre
+            class="max-h-32 max-w-full overflow-auto"
+          ><code class="tool-output"></code></pre>
         </div>
       </div>
     </details>
