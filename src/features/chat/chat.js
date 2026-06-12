@@ -1,54 +1,12 @@
-const markdownRenderer = (() => {
-  const renderer = new marked.Renderer();
-
-  renderer.heading = ({ tokens, depth }) => {
-    const text = renderer.parser.parseInline(tokens);
-    const level = Math.min(depth + 1, 6);
-    return `<h${level}>${text}</h${level}>`;
-  };
-
-  marked.setOptions({ gfm: true, breaks: false });
-
-  return rawText => {
-    const dirty = marked.parse(rawText, { renderer });
-    return DOMPurify.sanitize(dirty);
-  }
-})();
-
-function parseEvent(rawEvent) {
-  let eventType = "";
-  const dataLines = [];
-  for (const line of rawEvent.split("\n")) {
-    if (line.startsWith("event:")) {
-      eventType = line.slice(6).trim();
-    } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).replace(/^ /, "")); // strip one optional leading space
-    }
-  }
-  return { type: eventType, data: dataLines.join("\n") };
-}
-
-async function* parseSseStream(reader) {
-  let buf = "";
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    buf += value;
-    const events = buf.split("\n\n");
-    buf = events.pop();
-    for (const ev of events) {
-      if (ev.trim()) yield parseEvent(ev)
-    }
-  }
-}
+const initial = <<< .StoreJSON >>>;
 
 Alpine.store("chat", {
   isStreaming: false,
   _abortController: null,
-  totals: null,
-  conversationID: "",
-  title: "",
-  isBlank: true,
+  totals: initial?.totals ?? null,
+  conversationID: initial?.id ?? "",
+  title: initial?.title ?? "",
+  isBlank: !initial?.id,
   activeTool: "",
 
   start(ac) {
@@ -99,174 +57,6 @@ Alpine.store("chat", {
 });
 
 Alpine.data("chat", function () {
-  function hideTabs() {
-    Alpine.store("bottomtabs")?.hide();
-  }
-
-  function scrollToBottom() {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-  }
-
-  function templateContent(id) {
-    return document.getElementById(id).content.cloneNode(true)
-      .firstElementChild;
-  }
-
-  function cloneTemplate(id, messages, before) {
-    const node = templateContent(id);
-    messages.insertBefore(node, before);
-    scrollToBottom();
-    return node;
-  }
-
-  function copyWithFeedback(button, text) {
-    navigator.clipboard.writeText(text).then(() => {
-      const icon = button.querySelector(".icon");
-      icon.textContent = "check";
-      setTimeout(() => (icon.textContent = "content_copy"), 2500);
-    });
-  }
-
-  function appendUserMessage(text, messages, before) {
-    const node = cloneTemplate("message-user", messages, before);
-    node.querySelector(".message-text").textContent = text;
-  }
-
-  function appendMessageUsage(messageNode, exchange) {
-    if (!exchange?.usage || !exchange.id) return;
-    const { usage } = exchange;
-    const popoverTrigger = templateContent("message-details-trigger");
-    const popover = templateContent("message-details");
-    popover.setAttribute("id", exchange.id);
-    popover.querySelector(".input-tokens").textContent =
-      usage.display.input_tokens;
-    popover.querySelector(".cache-write-tokens").textContent =
-      usage.display.cache_creation_input_tokens;
-    popover.querySelector(".cache-read-tokens").textContent =
-      usage.display.cache_read_input_tokens;
-    popover.querySelector(".output-tokens").textContent =
-      usage.display.output_tokens;
-    popover.querySelector(".cost").textContent = usage.display.cost;
-    if (exchange.timing) {
-      popover.querySelector(".ttfb").textContent = exchange.timing.ttfb_ms + " ms";
-      popover.querySelector(".ttlb").textContent = exchange.timing.ttlb_ms + " ms";
-    }
-    popoverTrigger.querySelector(".output-tokens").textContent = `${usage.display.output_tokens} tok`
-    popoverTrigger.setAttribute("popovertarget", exchange.id);
-
-    messageNode.querySelector(".message-copy").after(popoverTrigger);
-    popoverTrigger.after(popover);
-  }
-
-  function appendAssistantMessage(messages, before) {
-    const node = cloneTemplate("message-assistant", messages, before);
-    const segments = node.querySelector(".message-segments");
-    let rawText = "";
-    let segmentText = "";
-    let segmentElement = null;
-    let openToolElement = null;
-    let renderTimer = null;
-
-    function render() {
-      if (segmentElement) {
-        segmentElement.innerHTML = markdownRenderer(segmentText);
-      }
-    }
-
-    function flushRender() {
-      if (renderTimer) {
-        clearTimeout(renderTimer);
-        renderTimer = null;
-      }
-      render();
-    }
-
-    return {
-      appendText(text) {
-        if (!segmentElement) {
-          const segment = templateContent("message-assistant-text");
-          segmentElement = segment.querySelector(".message-text");
-          segments.appendChild(segment);
-          segmentText = "";
-          if (rawText) rawText += "\n\n";
-        }
-        segmentText += text;
-        rawText += text;
-        if (renderTimer) return;
-        renderTimer = setTimeout(() => {
-          renderTimer = null;
-          render();
-        }, 60);
-        scrollToBottom();
-      },
-      appendTool(tool) {
-        flushRender();
-        segmentElement = null;
-
-        openToolElement = templateContent("message-tool");
-        openToolElement.querySelector(".tool-name").textContent = tool.name;
-        openToolElement.querySelector(".tool-input").textContent =
-          JSON.stringify(tool.input, null, 2);
-        segments.appendChild(openToolElement);
-        scrollToBottom();
-      },
-      toolResult(tool) {
-        if (!openToolElement) return;
-        const output = openToolElement.querySelector(".tool-output");
-        output.textContent = tool.result;
-        if (tool.is_error) {
-          output.classList.add("text-error");
-        }
-        openToolElement = null;
-        scrollToBottom();
-      },
-      finalise(exchange) {
-        flushRender();
-
-        node.setAttribute("aria-live", "polite");
-        node
-          .querySelector(".message-copy")
-          .addEventListener("click", (e) =>
-            copyWithFeedback(e.currentTarget, rawText),
-          );
-        appendMessageUsage(node, exchange);
-        node.querySelector(".message-toolbar").classList.remove("opacity-0");
-      },
-      cancel() {
-        flushRender();
-
-        const anchor = node.nextSibling;
-        if (segments.childElementCount > 0) {
-          node.querySelector(".assistant-badge")?.classList?.remove("loading");
-        } else {
-          node.remove();
-        }
-        node.querySelector(".message-toolbar").remove();
-        cloneTemplate("message-cancelled", messages, anchor);
-      },
-    };
-  }
-
-  function hydrateConversation(conv, messages, before) {
-    for (const ex of conv.exchanges) {
-      appendUserMessage(ex.request, messages, before);
-      const reply = appendAssistantMessage(messages, before);
-      for (const round of ex.rounds ?? []) {
-        if (round.text) reply.appendText(round.text);
-        for (const call of round.tool_calls ?? []) {
-          reply.appendTool(call);
-          reply.toolResult(call);
-        }
-      }
-      if (ex.cancelled) {
-        reply.cancel();
-      } else {
-        reply.finalise(ex);
-      }
-    }
-    scrollToBottom();
-  }
-
   function greeting() {
     const h = new Date().getHours();
     if (h < 12) return "Good morning.";
@@ -283,17 +73,6 @@ Alpine.data("chat", function () {
         this.onSubmit(e.detail.text),
       );
       this.$el.addEventListener("chat-stop", () => this.onStop());
-
-      const conv = <<< .ConversationJSON >>>;
-      if (conv?.exchanges?.length > 0) {
-        Alpine.store("chat").setConversation(conv);
-        hideTabs();
-        hydrateConversation(
-          conv,
-          this.$refs.messages,
-          this.$refs.loadingIndicator,
-        );
-      }
     },
 
     onStop() {
@@ -353,21 +132,18 @@ Alpine.data("chat", function () {
       }
     },
 
-    toggleDebug() {
-      const store = Alpine.store("chat");
-      store.debug = !store.debug;
-      localStorage.setItem("debug", store.debug);
-    },
-
     async onSubmit(text) {
       const store = Alpine.store("chat");
       const before = this.$refs.loadingIndicator;
 
-      appendUserMessage(text, this.$refs.messages, before);
+      chatMessages.appendUserMessage(text, this.$refs.messages, before);
       store.isBlank = false;
-      hideTabs();
+      Alpine.store("bottomtabs")?.hide();
 
-      const reply = appendAssistantMessage(this.$refs.messages, before);
+      const reply = chatMessages.appendAssistantMessage(
+        this.$refs.messages,
+        before,
+      );
       this._activeReply = reply;
 
       const ac = new AbortController();

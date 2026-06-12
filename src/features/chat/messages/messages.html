@@ -1,0 +1,199 @@
+<template id="message-user">
+  {{ template "message-user" .User }}
+</template>
+
+<template id="message-assistant">
+  {{ template "message-assistant" .Assistant }}
+</template>
+
+<template id="message-assistant-text">
+  {{ template "message-assistant-text" .Text }}
+</template>
+
+<template id="message-tool">
+  {{ template "message-tool" .Tool }}
+</template>
+
+<template id="message-details-trigger">
+  {{ template "message-details-trigger" .DetailsTrigger }}
+</template>
+
+<template id="message-details">
+  {{ template "message-details" .Details }}
+</template>
+
+<template id="message-cancelled">
+  {{ template "message-cancelled" . }}
+</template>
+
+{{ define "message-user" }}
+<div role="group" aria-label="You" class="flex flex-col items-end">
+  <div class="bg-container-highest rounded-xl rounded-br-none p-2 max-w-[90%]">
+    <p class="message-text select-all max-w-prose cursor-text">{{ .Text }}</p>
+  </div>
+</div>
+{{ end }}
+
+{{ define "message-assistant" }}
+<div
+  role="group"
+  aria-label="Assistant"
+  class="self-start max-w-full"
+  aria-live="{{ if .Final }}polite{{ else }}off{{ end }}"
+>
+  <div class="max-w-full overflow-x-hidden">
+    <div
+      class="message-segments flex flex-col gap-2"
+      :class="$store.debug.value ? 'gap-4' : 'gap-2'"
+    >{{ .SegmentsHTML }}</div>
+    {{ if not .HideToolbar }}
+    <div
+      :class="$store.debug.value ? '' : '-mx-2'"
+      class="message-toolbar flex items-center justify-start{{ if not .Final }} opacity-0{{ end }}"
+    >
+      <span
+        aria-hidden="true"
+        x-show="$store.debug.value"
+        class="icon icon-opsz-20 mt-1"
+      ></span>
+      <button aria-label="Copy response" class="btn message-copy">
+        <span aria-hidden="true" class="icon icon-opsz-20">content_copy</span>
+        <span class="text-xs">Copy</span>
+      </button>
+      {{ .DetailsHTML }}
+    </div>
+    {{ end }}
+  </div>
+</div>
+{{ end }}
+
+{{ define "message-assistant-text" }}
+<div
+  role="group"
+  aria-label="Assistant text"
+  class="gap-2"
+  :class="$store.debug.value && 'grid grid-cols-[auto_1fr]'"
+>
+  <span
+    aria-hidden="true"
+    x-show="$store.debug.value"
+    class="icon icon-opsz-20 text-secondary mt-1"
+    >line_start_circle</span
+  >
+  <div class="message-text">{{ .Text }}</div>
+</div>
+{{ end }}
+
+{{ define "message-tool" }}
+<div
+  role="group"
+  aria-label="Tool use"
+  x-show="$store.debug.value"
+  class="grid grid-cols-[auto_1fr] gap-2"
+>
+  <span aria-hidden="true" class="icon text-secondary icon-opsz-20 mt-1"
+    >tools_power_drill</span
+  >
+  <details class="group max-w-full overflow-hidden">
+    <summary
+      class="font-semibold cursor-pointer list-none [&::-webkit-details-marker]:hidden flex items-center gap-1"
+    >
+      <span class="tool-name">{{ .Name }}</span>
+      <span
+        aria-hidden="true"
+        class="icon icon-opsz-14 transition-transform group-open:rotate-180"
+        >keyboard_arrow_down</span
+      >
+    </summary>
+    <div
+      class="bg-container-lowest rounded-md border border-outline text-xs grid grid-cols-[auto_1fr] *:p-2 items-center mt-2 max-w-full"
+    >
+      <span>IN</span>
+      <div class="max-w-full overflow-hidden">
+        <pre class="max-h-24"><code class="tool-input">{{ .Input }}</code></pre>
+      </div>
+      <span>OUT</span>
+      <div class="max-w-full overflow-hidden">
+        <pre
+          class="max-h-32 max-w-full overflow-auto"
+        ><code class="tool-output{{ if .IsError }} text-error{{ end }}">{{ .Output }}</code></pre>
+      </div>
+    </div>
+  </details>
+</div>
+{{ end }}
+
+{{ define "message-details-trigger" }}
+<button
+  aria-label="Message details"
+  x-show="$store.debug.value"
+  {{ if .PopoverTarget }}popovertarget="{{ .PopoverTarget }}"{{ end }}
+  class="btn text-xs! text-on-surface-variant message-details pl-0! before:content-['•'] before:mr-1"
+>
+  <span aria-hidden="true" class="icon icon-opsz-14">arrow_downward</span>
+  <span class="output-tokens">{{ .OutputTokens }}</span>
+  <span aria-hidden="true" class="icon icon-opsz-14"
+    >keyboard_arrow_down</span
+  >
+</button>
+{{ end }}
+
+{{ define "message-details" }}
+<div
+  {{ if .ID }}id="{{ .ID }}"{{ end }}
+  popover
+  style="position-area: bottom center"
+  class="rounded-2xl absolute bg-container-highest whitespace-nowrap shadow p-2 text-xs flex-col gap-1 m-0 inset-0 open:flex"
+>
+  <ul
+    class="grid grid-cols-[auto_1fr_auto] *:items-center *:grid *:grid-cols-subgrid *:col-span-3 *:gap-2 *:border-b *:border-outline-variant *:p-2"
+  >
+    <li>
+      <span aria-hidden="true" class="icon icon-opsz-20">arrow_upward</span>
+      <span>Input Tokens</span>
+      <span class="input-tokens text-right font-semibold">{{ .InputTokens }}</span>
+    </li>
+    <li class="text-on-surface-variant">
+      <span aria-hidden="true" class="icon icon-opsz-20">arrow_warm_up</span>
+      <span>Cache Write</span>
+      <span class="cache-write-tokens text-right font-semibold">{{ .CacheWriteTokens }}</span>
+    </li>
+    <li class="text-on-surface-variant">
+      <span aria-hidden="true" class="icon icon-opsz-20"
+        >arrow_cool_down</span
+      >
+      <span>Cache Read</span>
+      <span class="cache-read-tokens text-right font-semibold">{{ .CacheReadTokens }}</span>
+    </li>
+    <li>
+      <span aria-hidden="true" class="icon icon-opsz-20">arrow_downward</span>
+      <span>Output Tokens</span>
+      <span class="output-tokens text-right font-semibold">{{ .OutputTokens }}</span>
+    </li>
+    <li class="border-b-0!">
+      <span aria-hidden="true" class="icon icon-opsz-20">attach_money</span>
+      <span>Cost</span>
+      <span class="cost text-right font-bold">{{ .Cost }}</span>
+    </li>
+  </ul>
+  <div class="grid grid-cols-2 items-center text-2xs px-2 gap-2">
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+      <span aria-hidden="true" class="icon icon-opsz-14">schedule</span>
+      <span>TTFB</span>
+      <span class="ttfb text-right">{{ .TTFB }}</span>
+    </div>
+    <div class="grid grid-cols-[auto_1fr_auto] items-center gap-1">
+      <span aria-hidden="true" class="icon icon-opsz-14">schedule</span>
+      <span>TTLB</span>
+      <span class="ttlb text-right">{{ .TTLB }}</span>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+{{ define "message-cancelled" }}
+<div class="flex items-center justify-center gap-2">
+  <span aria-hidden="true" class="icon icon-opsz-20 icon-fill-1">stop</span>
+  <span class="text-sm"> You stopped the response </span>
+</div>
+{{ end }}

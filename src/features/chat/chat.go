@@ -8,6 +8,7 @@ import (
 	"ct-go-chat/src/features/chat/chatinput"
 	"ct-go-chat/src/features/chat/chatstream"
 	"ct-go-chat/src/features/chat/history"
+	"ct-go-chat/src/features/chat/messages"
 	"ct-go-chat/src/features/conversation"
 	"ct-go-chat/src/features/nav"
 	"ct-go-chat/src/infrastructure/agent"
@@ -27,7 +28,10 @@ var chatHTML string
 //go:embed chat.js
 var chatJS string
 
-var chatTmpl = component.WithAlpine("chat.html", chatHTML, chatJS)
+//go:embed sse.js
+var sseJS string
+
+var chatTmpl = component.WithAlpine("chat.html", chatHTML, sseJS+"\n"+chatJS)
 
 func RegisterRoutes(mux *http.ServeMux, store *conversation.Store, chatAgent *agent.Agent) {
 	mux.HandleFunc("GET /chat", handleGet)
@@ -88,8 +92,11 @@ func handleDeleteConversation(store *conversation.Store) http.HandlerFunc {
 }
 
 type chatProps struct {
-	ChatInputHTML    template.HTML
-	ConversationJSON template.JS
+	HasConversation bool
+	ChatInputHTML   template.HTML
+	MessagesHTML    template.HTML
+	TemplatesHTML   template.HTML
+	StoreJSON       template.JS
 }
 
 func renderPage(conv *conversation.Conversation) (template.HTML, error) {
@@ -98,18 +105,35 @@ func renderPage(conv *conversation.Conversation) (template.HTML, error) {
 		return "", fmt.Errorf("chat page: render chatinput: %w", err)
 	}
 
-	convJSON := template.JS("null")
+	templatesHTML, err := messages.RenderTemplates()
+	if err != nil {
+		return "", fmt.Errorf("chat page: render message templates: %w", err)
+	}
+
+	var messagesHTML template.HTML
+	storeJSON := template.JS("null")
 	if conv != nil {
-		b, err := json.Marshal(conv)
+		messagesHTML, err = messages.RenderHistory(conv.Exchanges)
 		if err != nil {
-			return "", fmt.Errorf("chat page: marshal conversation: %w", err)
+			return "", fmt.Errorf("chat page: render history: %w", err)
 		}
-		convJSON = template.JS(b)
+		b, err := json.Marshal(struct {
+			ID     string              `json:"id"`
+			Title  string              `json:"title"`
+			Totals conversation.Totals `json:"totals"`
+		}{conv.ID, conv.Title, conv.Totals})
+		if err != nil {
+			return "", fmt.Errorf("chat page: marshal store state: %w", err)
+		}
+		storeJSON = template.JS(b)
 	}
 
 	content, err := chatTmpl.Render(chatProps{
-		ChatInputHTML:    chatInputHTML,
-		ConversationJSON: convJSON,
+		HasConversation: conv != nil,
+		ChatInputHTML:   chatInputHTML,
+		MessagesHTML:    messagesHTML,
+		TemplatesHTML:   templatesHTML,
+		StoreJSON:       storeJSON,
 	})
 
 	if err != nil {
