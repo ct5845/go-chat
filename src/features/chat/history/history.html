@@ -1,4 +1,4 @@
-<main class="contents">
+<main class="contents" x-data>
   <header class="flex items-center gap-4 p-2 sticky top-0 z-10 bg-surface">
     <a href="/chat" class="btn btn-icon" aria-label="New Chat">
       <span aria-hidden="true" class="icon">close</span>
@@ -53,17 +53,73 @@
           popover="auto"
           id="menu-{{ .ID }}"
           style="position-area: bottom span-left"
-          class="absolute whitespace-nowrap shadow m-0 inset-0 open:menu"
+          :class="$store.debug.value ? 'open:flex flex-col bg-surface-bright backdrop:bg-scrim/25 border shadow border-outline-variant p-4 rounded-2xl' : 'open:block bg-transparent'"
+          class="absolute whitespace-nowrap m-0 inset-0"
         >
-          <button
-            data-id="{{ .ID }}"
-            command="show-modal"
-            commandfor="confirm-delete"
-            class="menu-item text-error"
-          >
-            <span aria-hidden="true" class="icon icon-opsz-20">delete</span>
-            <span>Delete</span>
-          </button>
+          <h3 x-show="$store.debug.value" class="text-xs px-2 mb-2">
+            Conversation details
+          </h3>
+          <div class="grid grid-cols-2 gap-2">
+            <div x-show="$store.debug.value" class="col-span-2 px-2">
+              <span
+                class="text-3xl font-bold"
+                aria-label="Conversation cost ($)"
+                >{{ .TotalCost }}</span
+              >
+              <span class="text-on-surface-variant text-sm"
+                >{{ .TotalMessages }}</span
+              >
+            </div>
+            <dl
+              x-show="$store.debug.value"
+              class="col-span-2 flex flex-col gap-2 p-4 bg-container rounded-2xl"
+            >
+              <dt class="flex items-center gap-2 w-full">
+                <span aria-hidden="true" class="icon icon-opsz-20"
+                  >chat_bubble</span
+                >
+                <span class="text-xs grow">Conversation length</span>
+              </dt>
+              <dd class="text-sm text-on-surface-variant flex flex-col gap-2">
+                <div class="w-full">
+                  <meter
+                    class="w-full"
+                    aria-label="Conversation length"
+                    min="0"
+                    max="100"
+                    high="75"
+                    value="{{ .ContextWindowUsage }}"
+                  ></meter>
+                </div>
+                <div>
+                  <span aria-label="Conversation usage"
+                    >{{ .PercentOfContextWindow }}</span
+                  >
+                  <span class="aria-hidden">•</span>
+                  <span>{{ .ContextUsedTokens }}</span>
+                  /
+                  <span class="text-xs">{{ .ContextWindow }}</span>
+                </div>
+              </dd>
+            </dl>
+            <div class="menu col-span-2">
+              <a href="/chat/{{ .ID }}" class="menu-item">
+                <span class="grow">Open</span>
+                <span aria-hidden="true" class="icon icon-opsz-20"
+                  >keyboard_arrow_right</span
+                >
+              </a>
+              <button
+                data-id="{{ .ID }}"
+                command="show-modal"
+                commandfor="confirm-delete"
+                class="menu-item text-error"
+              >
+                <span class="grow text-left">Delete</span>
+                <span aria-hidden="true" class="icon icon-opsz-20">delete</span>
+              </button>
+            </div>
+          </div>
         </div>
       </li>
       {{ end }}

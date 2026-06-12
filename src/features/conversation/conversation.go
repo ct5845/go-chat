@@ -29,6 +29,7 @@ type Summary struct {
 	ID      string    `json:"id"`
 	Title   string    `json:"title"`
 	Updated time.Time `json:"updated"`
+	Totals  Totals    `json:"totals"`
 }
 
 type Store struct {
@@ -108,6 +109,7 @@ func (s *Store) List() ([]Summary, error) {
 			ID:      c.ID,
 			Title:   c.Title,
 			Updated: c.Updated,
+			Totals:  c.Totals,
 		})
 	}
 	slices.SortFunc(summaries, func(a, b Summary) int {
