@@ -3,12 +3,12 @@ package main
 import (
 	"context"
 	"ct-go-chat/src/features/chat"
-	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/features/home"
 	"ct-go-chat/src/infrastructure/agent"
 	"ct-go-chat/src/infrastructure/agent/bedrock"
 	"ct-go-chat/src/infrastructure/compression"
 	"ct-go-chat/src/infrastructure/config"
+	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/infrastructure/fileserver"
 	"ct-go-chat/src/infrastructure/prompts"
 	"ct-go-chat/src/infrastructure/reqlog"

@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/infrastructure/agent"
+	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/infrastructure/reqlog"
 )
 
