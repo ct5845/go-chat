@@ -7,6 +7,16 @@ import (
 	"ct-go-chat/src/infrastructure/agent/bedrock"
 )
 
+// Source records where a request originated. It is a property of the
+// exchange, not the conversation: a single conversation can mix origins if a
+// thread started elsewhere is later continued from another surface.
+type Source string
+
+const (
+	SourceWeb Source = "web"
+	SourceMCP Source = "mcp"
+)
+
 // Exchange is one user request and everything it took to answer it, as a
 // play-by-play of Rounds. It is the unit of persistence and UI rendering.
 // Response is the joined text of all rounds — what the conversation renders
@@ -17,6 +27,7 @@ type Exchange struct {
 	ID        string        `json:"id"`
 	Request   string        `json:"request"`
 	Response  string        `json:"response"`
+	Source    Source        `json:"source"`
 	Rounds    []Round       `json:"rounds,omitempty"`
 	Usage     bedrock.Usage `json:"usage"`
 	Timing    Timing        `json:"timing"`

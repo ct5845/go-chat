@@ -5,12 +5,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math/rand/v2"
-	"strconv"
-	"strings"
-	"time"
 
 	"ct-go-chat/src/infrastructure/agent"
+	"ct-go-chat/src/infrastructure/clock"
+	"ct-go-chat/src/infrastructure/dice"
 )
 
 func All() []agent.Tool {
@@ -19,8 +17,8 @@ func All() []agent.Tool {
 
 func rollDice() agent.Tool {
 	return agent.Tool{
-		Name:        "roll_dice",
-		Description: "Roll one or more dice and return the results. Call this whenever the user asks to roll dice or wants a random dice outcome — do not invent dice results yourself.",
+		Name:        dice.ToolName,
+		Description: dice.ToolDescription,
 		InputSchema: json.RawMessage(`{
 			"type": "object",
 			"properties": {
@@ -36,32 +34,19 @@ func rollDice() agent.Tool {
 			if err := json.Unmarshal(input, &args); err != nil {
 				return "", fmt.Errorf("invalid input: %w", err)
 			}
-			if args.Sides < 2 || args.Count < 1 || args.Count > 100 {
-				return "", fmt.Errorf("invalid dice: sides must be >= 2 and count between 1 and 100")
-			}
 
-			rolls := make([]string, args.Count)
-			total := 0
-			for i := range args.Count {
-				roll := rand.IntN(args.Sides) + 1
-				total += roll
-				rolls[i] = strconv.Itoa(roll)
-			}
-			if args.Count == 1 {
-				return fmt.Sprintf("Rolled a d%d: %s", args.Sides, rolls[0]), nil
-			}
-			return fmt.Sprintf("Rolled %dd%d: %s (total %d)", args.Count, args.Sides, strings.Join(rolls, ", "), total), nil
+			return dice.Roll(args.Sides, args.Count)
 		},
 	}
 }
 
 func getTime() agent.Tool {
 	return agent.Tool{
-		Name:        "get_time",
-		Description: "Get the current date and time in the server's local timezone. Call this whenever the user asks what the time or date is — your training data does not know the current time.",
+		Name:        clock.ToolName,
+		Description: clock.ToolDescription,
 		InputSchema: json.RawMessage(`{"type": "object", "properties": {}}`),
 		Run: func(ctx context.Context, input json.RawMessage) (string, error) {
-			return time.Now().Format("Monday, 2 January 2006 at 3:04:05 PM MST"), nil
+			return clock.Now(), nil
 		},
 	}
 }

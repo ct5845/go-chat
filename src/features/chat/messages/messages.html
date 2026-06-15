@@ -1,6 +1,4 @@
-<template id="message-user">
-  {{ template "message-user" .User }}
-</template>
+<template id="message-user"> {{ template "message-user" .User }} </template>
 
 <template id="message-assistant">
   {{ template "message-assistant" .Assistant }}
@@ -10,9 +8,7 @@
   {{ template "message-assistant-text" .Text }}
 </template>
 
-<template id="message-tool">
-  {{ template "message-tool" .Tool }}
-</template>
+<template id="message-tool"> {{ template "message-tool" .Tool }} </template>
 
 <template id="message-details-trigger">
   {{ template "message-details-trigger" .DetailsTrigger }}
@@ -27,14 +23,19 @@
 </template>
 
 {{ define "message-user" }}
-<div role="group" aria-label="You" class="flex flex-col items-end">
+<div role="group" aria-label="You" class="flex flex-row justify-end gap-2">
   <div class="bg-container-highest rounded-xl rounded-br-none p-2 max-w-[90%]">
     <p class="message-text select-all max-w-prose cursor-text">{{ .Text }}</p>
   </div>
+  {{ if .MCPIcon }}
+  <span
+    aria-label="Includes MCP activity"
+    class="size-5 mt-2.5 shrink-0 text-secondary self-start"
+    >{{ .MCPIcon }}</span
+  >
+  {{ end }}
 </div>
-{{ end }}
-
-{{ define "message-assistant" }}
+{{ end }} {{ define "message-assistant" }}
 <div
   role="group"
   aria-label="Assistant"
@@ -45,7 +46,9 @@
     <div
       class="message-segments flex flex-col gap-2"
       :class="$store.debug.value ? 'gap-4' : 'gap-2'"
-    >{{ .SegmentsHTML }}</div>
+    >
+      {{ .SegmentsHTML }}
+    </div>
     {{ if not .HideToolbar }}
     <div
       :class="$store.debug.value ? '' : '-mx-2'"
@@ -65,9 +68,7 @@
     {{ end }}
   </div>
 </div>
-{{ end }}
-
-{{ define "message-assistant-text" }}
+{{ end }} {{ define "message-assistant-text" }}
 <div
   role="group"
   aria-label="Assistant text"
@@ -82,9 +83,7 @@
   >
   <div class="message-text">{{ .Text }}</div>
 </div>
-{{ end }}
-
-{{ define "message-tool" }}
+{{ end }} {{ define "message-tool" }}
 <div
   role="group"
   aria-label="Tool use"
@@ -121,26 +120,32 @@
     </div>
   </details>
 </div>
-{{ end }}
-
-{{ define "message-details-trigger" }}
+{{ end }} {{ define "message-details-trigger" }}
 <button
   aria-label="Message details"
   x-show="$store.debug.value"
-  {{ if .PopoverTarget }}popovertarget="{{ .PopoverTarget }}"{{ end }}
+  {{
+  if
+  .PopoverTarget
+  }}popovertarget="{{ .PopoverTarget }}"
+  {{
+  end
+  }}
   class="btn text-xs! text-on-surface-variant message-details pl-0! before:content-['•'] before:mr-1"
 >
   <span aria-hidden="true" class="icon icon-opsz-14">arrow_downward</span>
   <span class="output-tokens">{{ .OutputTokens }}</span>
-  <span aria-hidden="true" class="icon icon-opsz-14"
-    >keyboard_arrow_down</span
-  >
+  <span aria-hidden="true" class="icon icon-opsz-14">keyboard_arrow_down</span>
 </button>
-{{ end }}
-
-{{ define "message-details" }}
+{{ end }} {{ define "message-details" }}
 <div
-  {{ if .ID }}id="{{ .ID }}"{{ end }}
+  {{
+  if
+  .ID
+  }}id="{{ .ID }}"
+  {{
+  end
+  }}
   popover
   style="position-area: bottom center"
   class="rounded-2xl absolute bg-container-highest whitespace-nowrap shadow p-2 text-xs flex-col gap-1 m-0 inset-0 open:flex"
@@ -151,24 +156,30 @@
     <li>
       <span aria-hidden="true" class="icon icon-opsz-20">arrow_upward</span>
       <span>Input Tokens</span>
-      <span class="input-tokens text-right font-semibold">{{ .InputTokens }}</span>
+      <span class="input-tokens text-right font-semibold"
+        >{{ .InputTokens }}</span
+      >
     </li>
     <li class="text-on-surface-variant">
       <span aria-hidden="true" class="icon icon-opsz-20">arrow_warm_up</span>
       <span>Cache Write</span>
-      <span class="cache-write-tokens text-right font-semibold">{{ .CacheWriteTokens }}</span>
+      <span class="cache-write-tokens text-right font-semibold"
+        >{{ .CacheWriteTokens }}</span
+      >
     </li>
     <li class="text-on-surface-variant">
-      <span aria-hidden="true" class="icon icon-opsz-20"
-        >arrow_cool_down</span
-      >
+      <span aria-hidden="true" class="icon icon-opsz-20">arrow_cool_down</span>
       <span>Cache Read</span>
-      <span class="cache-read-tokens text-right font-semibold">{{ .CacheReadTokens }}</span>
+      <span class="cache-read-tokens text-right font-semibold"
+        >{{ .CacheReadTokens }}</span
+      >
     </li>
     <li>
       <span aria-hidden="true" class="icon icon-opsz-20">arrow_downward</span>
       <span>Output Tokens</span>
-      <span class="output-tokens text-right font-semibold">{{ .OutputTokens }}</span>
+      <span class="output-tokens text-right font-semibold"
+        >{{ .OutputTokens }}</span
+      >
     </li>
     <li class="border-b-0!">
       <span aria-hidden="true" class="icon icon-opsz-20">attach_money</span>
@@ -189,9 +200,7 @@
     </div>
   </div>
 </div>
-{{ end }}
-
-{{ define "message-cancelled" }}
+{{ end }} {{ define "message-cancelled" }}
 <div class="flex items-center justify-center gap-2">
   <span aria-hidden="true" class="icon icon-opsz-20 icon-fill-1">stop</span>
   <span class="text-sm"> You stopped the response </span>

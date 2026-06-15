@@ -1,12 +1,36 @@
 package icon
 
 import (
+	"embed"
 	"fmt"
+	"html/template"
+	"io/fs"
+	"path/filepath"
 	"slices"
 	"strings"
 )
 
 var IconFontHref string
+
+//go:embed *.svg
+var svgFiles embed.FS
+
+var SVG = map[string]template.HTML{}
+
+func init() {
+	entries, err := fs.ReadDir(svgFiles, ".")
+	if err != nil {
+		panic(err)
+	}
+	for _, entry := range entries {
+		content, err := svgFiles.ReadFile(entry.Name())
+		if err != nil {
+			panic(err)
+		}
+		name := strings.TrimSuffix(entry.Name(), filepath.Ext(entry.Name()))
+		SVG[name] = template.HTML(content)
+	}
+}
 
 func init() {
 	// Every icon name used anywhere in the app's templates must be listed
@@ -41,6 +65,7 @@ func init() {
 		"menu",
 		"more_vert",
 		"mic",
+		"person",
 		"schedule",
 		"search",
 		"send",

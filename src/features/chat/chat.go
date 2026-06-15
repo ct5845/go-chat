@@ -9,7 +9,7 @@ import (
 	"ct-go-chat/src/features/chat/chatstream"
 	"ct-go-chat/src/features/chat/history"
 	"ct-go-chat/src/features/chat/messages"
-	"ct-go-chat/src/features/conversation"
+	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/features/nav"
 	"ct-go-chat/src/infrastructure/agent"
 	"ct-go-chat/src/infrastructure/reqlog"

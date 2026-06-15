@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"ct-go-chat/src/features/conversation"
+	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/infrastructure/agent"
 	"ct-go-chat/src/infrastructure/reqlog"
 )
@@ -129,6 +129,7 @@ func paperwork(w io.Writer, flusher http.Flusher, store *conversation.Store, con
 	if res.err != nil {
 		slog.Error("chat: agent run", "error", res.err)
 	}
+	res.exchange.Source = agent.SourceWeb
 	conv.Exchanges = append(conv.Exchanges, res.exchange)
 
 	if err := store.Save(conv); err != nil {

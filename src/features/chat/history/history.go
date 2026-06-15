@@ -2,9 +2,10 @@ package history
 
 import (
 	"ct-go-chat/src/components/component"
+	"ct-go-chat/src/components/icon"
 	"ct-go-chat/src/components/layoutfull"
 	"ct-go-chat/src/components/page"
-	"ct-go-chat/src/features/conversation"
+	"ct-go-chat/src/infrastructure/conversation"
 	"ct-go-chat/src/infrastructure/reqlog"
 	_ "embed"
 	"fmt"
@@ -81,6 +82,7 @@ type summaryRow struct {
 	PercentOfContextWindow string
 	ContextUsedTokens      string
 	ContextWindow          string
+	MCPIcon                template.HTML
 }
 
 func contextWindowUsage(t conversation.Totals) int {
@@ -101,6 +103,10 @@ func renderPage(store *conversation.Store) (template.HTML, error) {
 	for i, s := range summaries {
 		usage := contextWindowUsage(s.Totals)
 		display := s.Totals.Display()
+		var mcpIcon template.HTML
+		if s.IncludesMCP {
+			mcpIcon = icon.SVG["mcp"]
+		}
 		rows[i] = summaryRow{
 			ID:                     s.ID,
 			Title:                  s.Title,
@@ -111,6 +117,7 @@ func renderPage(store *conversation.Store) (template.HTML, error) {
 			PercentOfContextWindow: fmt.Sprintf("%d%% used", usage),
 			ContextUsedTokens:      display.ContextUsedTokens,
 			ContextWindow:          display.ContextWindow,
+			MCPIcon:                mcpIcon,
 		}
 	}
 

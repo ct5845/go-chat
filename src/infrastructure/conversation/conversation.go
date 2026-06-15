@@ -26,10 +26,20 @@ type Conversation struct {
 }
 
 type Summary struct {
-	ID      string    `json:"id"`
-	Title   string    `json:"title"`
-	Updated time.Time `json:"updated"`
-	Totals  Totals    `json:"totals"`
+	ID          string    `json:"id"`
+	Title       string    `json:"title"`
+	Updated     time.Time `json:"updated"`
+	Totals      Totals    `json:"totals"`
+	IncludesMCP bool      `json:"includesMCP"`
+}
+
+func (c *Conversation) includesMCP() bool {
+	for _, ex := range c.Exchanges {
+		if ex.Source == agent.SourceMCP {
+			return true
+		}
+	}
+	return false
 }
 
 type Store struct {
@@ -106,10 +116,11 @@ func (s *Store) List() ([]Summary, error) {
 			continue
 		}
 		summaries = append(summaries, Summary{
-			ID:      c.ID,
-			Title:   c.Title,
-			Updated: c.Updated,
-			Totals:  c.Totals,
+			ID:          c.ID,
+			Title:       c.Title,
+			Updated:     c.Updated,
+			Totals:      c.Totals,
+			IncludesMCP: c.includesMCP(),
 		})
 	}
 	slices.SortFunc(summaries, func(a, b Summary) int {

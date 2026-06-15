@@ -1,4 +1,4 @@
-.PHONY: web build docker
+.PHONY: web build build-mcp docker
 
 ifeq ($(OS),Windows_NT)
   AIR_CONF = .air.windows.toml
@@ -13,6 +13,9 @@ build:
 	npm run build-css
 	go run ./cmd/copyassets
 	go build -o build/ ./cmd/web
+
+build-mcp:
+	go build -o build/ ./cmd/mcp
 
 docker:
 	docker build -f cmd/web/Dockerfile -t ct-go-chat .

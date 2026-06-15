@@ -7,6 +7,7 @@ package messages
 import (
 	"bytes"
 	"ct-go-chat/src/components/component"
+	"ct-go-chat/src/components/icon"
 	"ct-go-chat/src/infrastructure/agent"
 	"ct-go-chat/src/infrastructure/agent/bedrock"
 	_ "embed"
@@ -29,6 +30,10 @@ var partials = template.Must(template.New("messages.html").Parse(messagesHTML))
 
 type userProps struct {
 	Text string
+	// MCPIcon is set only for stored exchanges that originated via MCP. It is
+	// always empty in the streamed <template> shell — a live web request is
+	// never MCP — so the badge can only ever come from persisted history.
+	MCPIcon template.HTML
 }
 
 type assistantProps struct {
@@ -88,7 +93,11 @@ func RenderTemplates() (template.HTML, error) {
 func RenderHistory(exchanges []agent.Exchange) (template.HTML, error) {
 	var out template.HTML
 	for _, ex := range exchanges {
-		user, err := renderPartial("message-user", userProps{Text: ex.Request})
+		var mcpIcon template.HTML
+		if ex.Source == agent.SourceMCP {
+			mcpIcon = icon.SVG["mcp"]
+		}
+		user, err := renderPartial("message-user", userProps{Text: ex.Request, MCPIcon: mcpIcon})
 		if err != nil {
 			return "", err
 		}
